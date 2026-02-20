@@ -1,0 +1,348 @@
+/* ═══════════════════════════════════════════════════
+   POLTRIFARM — Slideshow.css
+   Dark Navy & Gold premium theme — matches Homepage.css
+═══════════════════════════════════════════════════ */
+
+:root {
+  --navy:       #0a0f1e;
+  --navy-mid:   #111827;
+  --gold:       #c9a84c;
+  --gold-light: #e6c97a;
+  --white:      #f8f5ee;
+  --muted:      #8a9bb5;
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body:  'DM Sans', sans-serif;
+}
+
+/* ════════════════════════════
+   SLIDESHOW CONTAINER
+════════════════════════════ */
+.slideshow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 0; /* sits behind navbar (z:1000) and hero content (z:4+) */
+}
+
+/* ════════════════════════════
+   SLIDE LAYERS
+════════════════════════════ */
+.slide {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+
+  /* Default: hidden */
+  opacity: 0;
+  transform: scale(1.04);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Active slide */
+.slide--active {
+  opacity: 1;
+  z-index: 2;
+  animation: none;
+}
+
+/* ── Directional enter transitions ── */
+.slide--enter-next {
+  animation: slide-enter-next 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+.slide--enter-prev {
+  animation: slide-enter-prev 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+
+@keyframes slide-enter-next {
+  from { opacity: 0; transform: scale(1.06) translateX(2%); }
+  to   { opacity: 1; transform: scale(1)    translateX(0);   }
+}
+@keyframes slide-enter-prev {
+  from { opacity: 0; transform: scale(1.06) translateX(-2%); }
+  to   { opacity: 1; transform: scale(1)    translateX(0);    }
+}
+
+/* ── Exit transitions ── */
+.slide--exit {
+  opacity: 1;
+  z-index: 1;
+}
+.slide--exit-next {
+  animation: slide-exit-next 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+.slide--exit-prev {
+  animation: slide-exit-prev 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+
+@keyframes slide-exit-next {
+  from { opacity: 1; transform: scale(1)    translateX(0);    }
+  to   { opacity: 0; transform: scale(0.97) translateX(-2%);  }
+}
+@keyframes slide-exit-prev {
+  from { opacity: 1; transform: scale(1)    translateX(0);    }
+  to   { opacity: 0; transform: scale(0.97) translateX(2%);   }
+}
+
+/* ── Ken Burns continuous zoom ── */
+.slide-zoom {
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  transform: scale(1);
+  transition: none;
+}
+.slide-zoom--active {
+  animation: ken-burns 6s ease-out forwards;
+}
+@keyframes ken-burns {
+  from { transform: scale(1); }
+  to   { transform: scale(1.08); }
+}
+
+/* ════════════════════════════
+   OVERLAYS
+════════════════════════════ */
+
+/* Rich layered vignette — deeper at edges, lighter in center */
+.slideshow-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    /* Bottom fade for UI elements */
+    linear-gradient(to top,   rgba(10,15,30,0.75) 0%,  transparent 40%),
+    /* Top fade for navbar */
+    linear-gradient(to bottom, rgba(10,15,30,0.55) 0%, transparent 35%),
+    /* Left edge */
+    linear-gradient(to right,  rgba(10,15,30,0.5)  0%, transparent 45%),
+    /* Right edge */
+    linear-gradient(to left,   rgba(10,15,30,0.4)  0%, transparent 45%),
+    /* Center dark overlay */
+    rgba(10,15,30,0.32);
+}
+
+/* ════════════════════════════
+   PROGRESS BAR
+════════════════════════════ */
+.slideshow-progress {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 2px;
+  background: rgba(201,168,76,0.12);
+  z-index: 10;
+}
+.slideshow-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  box-shadow: 0 0 8px rgba(201,168,76,0.6);
+  /* Width driven by JS inline style — no CSS transition needed (rAF handles it) */
+}
+
+/* ════════════════════════════
+   SLIDE COUNTER (top-right)
+════════════════════════════ */
+.slide-counter {
+  position: absolute;
+  top: 6.5rem; right: 2.5rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+}
+.slide-counter-current {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--gold);
+  line-height: 1;
+}
+.slide-counter-divider {
+  display: block;
+  width: 1px; height: 24px;
+  background: rgba(201,168,76,0.35);
+  transform: rotate(20deg);
+}
+.slide-counter-total {
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1;
+}
+
+/* ════════════════════════════
+   SLIDE LABEL (bottom-left)
+════════════════════════════ */
+.slide-label {
+  position: absolute;
+  bottom: 4.5rem; left: 3rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(248,245,238,0.6);
+
+  animation: label-fade-in 0.6s ease 0.4s both;
+}
+@keyframes label-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-label-line {
+  display: block;
+  width: 24px; height: 1px;
+  background: var(--gold);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════
+   ARROWS
+════════════════════════════ */
+.slide-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: none;
+  border: 1px solid rgba(201,168,76,0.2);
+  color: var(--gold);
+  width: 48px; height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: none;
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+
+  /* Hidden by default — revealed on slideshow hover */
+  opacity: 0;
+  pointer-events: none;
+}
+.slideshow:hover .slide-arrow {
+  opacity: 1;
+  pointer-events: auto;
+}
+.slide-arrow:hover {
+  background: rgba(201,168,76,0.1);
+  border-color: rgba(201,168,76,0.6);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.slide-arrow--prev { left: 2rem; }
+.slide-arrow--next { right: 2rem; }
+
+/* Subtle nudge on hover */
+.slide-arrow--prev:hover .arrow-inner { transform: translateX(-2px); }
+.slide-arrow--next:hover .arrow-inner { transform: translateX(2px); }
+
+.arrow-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+}
+
+/* ════════════════════════════
+   DOT INDICATORS
+════════════════════════════ */
+.slide-indicators {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  z-index: 10;
+}
+
+.indicator {
+  position: relative;
+  width: 28px; height: 2px;
+  background: rgba(201,168,76,0.2);
+  border: none;
+  border-radius: 1px;
+  padding: 0;
+  cursor: none;
+  overflow: hidden;
+  transition: width 0.35s ease, background 0.35s ease;
+}
+.indicator:hover {
+  background: rgba(201,168,76,0.4);
+  width: 34px;
+}
+
+/* Active indicator is wider with a gold fill */
+.indicator--active {
+  width: 44px;
+  background: rgba(201,168,76,0.25);
+}
+.indicator-fill {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: background 0.3s;
+}
+.indicator--active .indicator-fill {
+  background: var(--gold);
+  transform: scaleX(1);
+  box-shadow: 0 0 6px rgba(201,168,76,0.5);
+}
+
+/* ════════════════════════════
+   PAUSE BADGE
+════════════════════════════ */
+.slideshow-paused {
+  position: absolute;
+  top: 6.5rem; left: 2.5rem;
+  z-index: 10;
+  font-family: var(--font-body);
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.5);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fade-in 0.3s ease;
+}
+.slideshow-paused::before {
+  content: '';
+  display: block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.5;
+  animation: pause-pulse 1.4s ease-in-out infinite;
+}
+@keyframes pause-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.3); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ════════════════════════════
+   RESPONSIVE
+════════════════════════════ */
+@media (max-width: 720px) {
+  .slide-counter   { top: 5.5rem; right: 1.5rem; }
+  .slide-label     { bottom: 4rem; left: 1.5rem; }
+  .slide-arrow     { width: 38px; height: 38px; }
+  .slide-arrow--prev { left: 1rem; }
+  .slide-arrow--next { right: 1rem; }
+}
