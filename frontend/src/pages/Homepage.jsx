@@ -118,11 +118,6 @@ function Homepage() {
         <Particles />
 
         <div className="hero-content">
-          <div className="hero-eyebrow">
-            <span className="eyebrow-line" />
-            Premium Poultry Management System
-            <span className="eyebrow-line" />
-          </div>
 
           <h1 className="hero-title">
             Elevate Your <em>Farm.</em>

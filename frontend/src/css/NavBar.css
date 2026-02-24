@@ -355,3 +355,176 @@
   .brand-sub { display: none; }
   .dropdown-menu { width: 210px; }
 }
+
+/* ════════════════════════════
+   AUTH DROPDOWN
+════════════════════════════ */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.auth-dropdown-wrap {
+  position: relative;
+}
+
+/* "Sign In" button in nav */
+.navbar-auth-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.28);
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.52rem 1.1rem;
+  cursor: none;
+  transition: background 0.3s, border-color 0.3s;
+}
+.navbar-auth-btn:hover,
+.navbar-auth-btn--open {
+  background: rgba(201,168,76,0.14);
+  border-color: rgba(201,168,76,0.55);
+}
+.auth-btn-icon { font-size: 0.65rem; opacity: 0.7; }
+.auth-btn-chevron {
+  font-size: 0.6rem;
+  transition: transform 0.3s;
+  display: inline-block;
+}
+.auth-btn-chevron.rotated { transform: rotate(180deg); }
+
+/* Dropdown panel */
+.auth-dropdown {
+  position: absolute;
+  top: calc(100% + 0.8rem);
+  right: 0;
+  width: 260px;
+  background: var(--navy-mid);
+  border: 1px solid rgba(201,168,76,0.18);
+  border-top: 2px solid var(--gold);
+  padding: 0.5rem 0 0.75rem;
+  z-index: 200;
+  animation: auth-drop-in 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes auth-drop-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.auth-dropdown-header {
+  padding: 0.65rem 1.2rem 0.5rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.4);
+}
+
+.auth-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: none;
+  padding: 0.85rem 1.2rem;
+  text-align: left;
+  transition: background 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+.auth-dropdown-item::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(201,168,76,0.07), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+.auth-dropdown-item:hover::before { transform: translateX(0); }
+
+.auth-item-icon {
+  width: 34px; height: 34px;
+  border: 1px solid rgba(201,168,76,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; flex-shrink: 0;
+  transition: border-color 0.3s;
+}
+.auth-dropdown-item:hover .auth-item-icon { border-color: rgba(201,168,76,0.5); }
+.admin-icon { font-size: 0.7rem; color: var(--gold); }
+
+.auth-item-body { flex: 1; }
+.auth-item-label {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--white);
+  display: block;
+  margin-bottom: 0.1rem;
+}
+.auth-item-sub {
+  font-size: 0.68rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+.auth-item-arrow {
+  font-size: 0.8rem;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.25s, transform 0.25s, color 0.25s;
+}
+.auth-dropdown-item:hover .auth-item-arrow {
+  opacity: 1; transform: translateX(0);
+  color: var(--gold);
+}
+
+/* Admin item slight distinction */
+.auth-dropdown-item--admin .auth-item-label { color: var(--gold-pale); }
+
+.auth-dropdown-divider {
+  height: 1px;
+  background: rgba(201,168,76,0.08);
+  margin: 0.3rem 0;
+}
+
+.auth-dropdown-footer {
+  padding: 0.7rem 1.2rem 0.1rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.auth-dropdown-register-link {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-size: inherit;
+  cursor: none;
+  padding: 0;
+  transition: color 0.25s;
+}
+.auth-dropdown-register-link:hover { color: var(--gold-light); text-decoration: underline; }
+
+/* Section label inside hamburger */
+.dropdown-section-label {
+  padding: 0.5rem 1.4rem 0.2rem;
+  font-size: 0.56rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.35);
+}
+
+/* Auth items inside hamburger */
+.dropdown-item--auth { color: rgba(248,245,238,0.65); }
+.dropdown-item--auth:hover { color: var(--gold); }
+
+/* ── Responsive: hide Sign In button text on small screens ── */
+@media (max-width: 640px) {
+  .navbar-auth-btn { padding: 0.52rem 0.75rem; }
+  .navbar-auth-btn span:not(.auth-btn-icon):not(.auth-btn-chevron) { display: none; }
+}
