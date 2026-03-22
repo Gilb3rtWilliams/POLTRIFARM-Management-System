@@ -20,7 +20,7 @@ const FOOTER_LINKS = {
   Support: [
     { label: 'Help Center',     path: '/settings' },
     { label: 'Onboarding',      path: '/dashboard'},
-    { label: 'Privacy Policy',  path: '/'         },
+    { label: 'Privacy Policy',  path: '/privacy'   },
     { label: 'Terms of Service',path: '/'         },
   ],
 };
@@ -179,7 +179,9 @@ const Footer = () => {
             {SOCIALS.map(s => (
               <a
                 key={s.id}
-                href="#"
+                href="www.facebook.com/poltrifarm" // Placeholder URL
+                target="_blank"
+                rel="noopener noreferrer"
                 className="social-btn"
                 aria-label={s.label}
               >

@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import '../css/Auth.css';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { loginUser } from "../firebase";
+import "../css/Auth.css";
+import logo from "../assets/logos/app.png";
 
 /* ── Floating particles helper ── */
 function Particles() {
@@ -13,11 +15,18 @@ function Particles() {
   }));
   return (
     <div className="auth-particles" aria-hidden="true">
-      {items.map(p => (
-        <div key={p.id} className="auth-particle" style={{
-          left: p.left, width: p.size, height: p.size,
-          animationDuration: p.duration, animationDelay: p.delay,
-        }} />
+      {items.map((p) => (
+        <div
+          key={p.id}
+          className="auth-particle"
+          style={{
+            left: p.left,
+            width: p.size,
+            height: p.size,
+            animationDuration: p.duration,
+            animationDelay: p.delay,
+          }}
+        />
       ))}
     </div>
   );
@@ -27,68 +36,102 @@ export default function UserLogin() {
   const navigate = useNavigate();
 
   /* -- cursor -- */
-  const dotRef  = useRef(null);
+  const dotRef = useRef(null);
   const ringRef = useRef(null);
-  const mouse   = useRef({ x: -200, y: -200 });
-  const pos     = useRef({ x: -200, y: -200 });
+  const mouse = useRef({ x: -200, y: -200 });
+  const pos = useRef({ x: -200, y: -200 });
 
   useEffect(() => {
-    const move = e => { mouse.current.x = e.clientX; mouse.current.y = e.clientY; };
-    window.addEventListener('mousemove', move);
+    const move = (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+    };
+    window.addEventListener("mousemove", move);
     let raf;
     const loop = () => {
       pos.current.x += (mouse.current.x - pos.current.x) * 0.11;
       pos.current.y += (mouse.current.y - pos.current.y) * 0.11;
       if (dotRef.current)
-        dotRef.current.style.transform = `translate(${mouse.current.x - 5}px,${mouse.current.y - 5}px)`;
+        dotRef.current.style.transform = `translate(${mouse.current.x - 5}px,${
+          mouse.current.y - 5
+        }px)`;
       if (ringRef.current)
-        ringRef.current.style.transform = `translate(${pos.current.x - 18}px,${pos.current.y - 18}px)`;
+        ringRef.current.style.transform = `translate(${pos.current.x - 18}px,${
+          pos.current.y - 18
+        }px)`;
       raf = requestAnimationFrame(loop);
     };
     loop();
-    return () => { window.removeEventListener('mousemove', move); cancelAnimationFrame(raf); };
+    return () => {
+      window.removeEventListener("mousemove", move);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   /* -- form state -- */
-  const [form, setForm]       = useState({ email: '', password: '' });
-  const [errors, setErrors]   = useState({});
-  const [showPw, setShowPw]   = useState(false);
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [banner, setBanner]   = useState(null); // { type, msg }
+  const [banner, setBanner] = useState(null); // { type, msg }
 
   const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }));
-    if (errors[k]) setErrors(e => ({ ...e, [k]: null }));
+    setForm((f) => ({ ...f, [k]: v }));
+    if (errors[k]) setErrors((e) => ({ ...e, [k]: null }));
   };
 
   const validate = () => {
     const e = {};
-    if (!form.email)    e.email    = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email.';
-    if (!form.password) e.password = 'Password is required.';
+    if (!form.email) e.email = "Email is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      e.email = "Enter a valid email.";
+    if (!form.password) e.password = "Password is required.";
     return e;
   };
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
     setLoading(true);
     setBanner(null);
-    // Simulate API call — replace with real auth
-    await new Promise(r => setTimeout(r, 1400));
-    setLoading(false);
-    // Mock success
-    setBanner({ type: 'success', msg: 'Login successful! Redirecting to dashboard…' });
-    setTimeout(() => navigate('/dashboard'), 1600);
+    try {
+      const { role } = await loginUser(form.email, form.password);
+      setBanner({
+        type: "success",
+        msg: "Login successful! Redirecting to dashboard…",
+      });
+      setTimeout(() => {
+        navigate(role === "admin" ? "/admin/dashboard" : "/farmer/dashboard");
+      }, 1200);
+    } catch (err) {
+      const msg =
+        err.code === "auth/invalid-credential"
+          ? "Incorrect email or password."
+          : err.code === "auth/user-not-found"
+          ? "No account found with this email."
+          : err.code === "auth/wrong-password"
+          ? "Incorrect password."
+          : err.code === "auth/too-many-requests"
+          ? "Too many failed attempts. Try again later."
+          : err.code === "auth/user-disabled"
+          ? "This account has been disabled."
+          : err.message || "Login failed. Please try again.";
+      setBanner({ type: "error", msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const expand = () => ringRef.current?.classList.add('expanded');
-  const shrink = () => ringRef.current?.classList.remove('expanded');
+  const expand = () => ringRef.current?.classList.add("expanded");
+  const shrink = () => ringRef.current?.classList.remove("expanded");
 
   return (
     <div className="auth-page">
-      <div className="cursor-dot"  ref={dotRef}  aria-hidden="true" />
+      <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
       <div className="cursor-ring" ref={ringRef} aria-hidden="true" />
 
       {/* ── LEFT PANEL ── */}
@@ -99,12 +142,26 @@ export default function UserLogin() {
         <div className="auth-geo auth-geo-circle-inner" />
         <Particles />
 
-        
+        <Link
+          to="/"
+          className="auth-brand"
+          onMouseEnter={expand}
+          onMouseLeave={shrink}
+        >
+          <img src={logo} alt="Poltrifarm" className="auth-brand-logo" />
+          <div className="auth-brand-name">
+            POLTRI<span>FARM</span>
+          </div>
+        </Link>
 
         <div className="auth-left-body">
           <div className="auth-left-eyebrow">Farmer Portal</div>
           <h2 className="auth-left-heading">
-            Welcome<br /><em>Back</em> to<br /><strong>Your Farm.</strong>
+            Welcome
+            <br />
+            <em>Back</em> to
+            <br />
+            <strong>Your Farm.</strong>
           </h2>
           <p className="auth-left-desc">
             Sign in to manage your flock, track production, and access real-time
@@ -112,12 +169,14 @@ export default function UserLogin() {
           </p>
           <div className="auth-left-features">
             {[
-              'Live flock health monitoring',
-              'Feed & inventory tracking',
-              'Daily production analytics',
-              'Financial performance reports',
-            ].map(f => (
-              <div className="auth-feature-pill" key={f}>{f}</div>
+              "Live flock health monitoring",
+              "Feed & inventory tracking",
+              "Daily production analytics",
+              "Financial performance reports",
+            ].map((f) => (
+              <div className="auth-feature-pill" key={f}>
+                {f}
+              </div>
             ))}
           </div>
         </div>
@@ -132,34 +191,48 @@ export default function UserLogin() {
         <div className="auth-form-wrap">
           <div className="auth-form-header">
             <div className="auth-form-eyebrow">Farmer Account</div>
-            <h1 className="auth-form-title">Sign <em>In</em></h1>
+            <h1 className="auth-form-title">
+              Sign <em>In</em>
+            </h1>
             <p className="auth-form-subtitle">
               Access your farm dashboard and operations.
             </p>
           </div>
 
           {/* Role switch */}
-          <div className="auth-role-toggle" role="tablist" aria-label="Account type">
+          <div
+            className="auth-role-toggle"
+            role="tablist"
+            aria-label="Account type"
+          >
             <button
-              role="tab" aria-selected="true"
+              role="tab"
+              aria-selected="true"
               className="role-tab active"
-              onMouseEnter={expand} onMouseLeave={shrink}
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
             >
               🌾 &nbsp;Farmer
             </button>
             <button
-              role="tab" aria-selected="false"
+              role="tab"
+              aria-selected="false"
               className="role-tab"
-              onClick={() => navigate('/admin/login')}
-              onMouseEnter={expand} onMouseLeave={shrink}
+              onClick={() => navigate("/admin/login")}
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
             >
               ◆ &nbsp;Admin
             </button>
           </div>
 
           {banner && (
-            <div className={banner.type === 'success' ? 'auth-success' : 'auth-error-banner'}>
-              {banner.type === 'success' ? '✓' : '✕'} &nbsp;{banner.msg}
+            <div
+              className={
+                banner.type === "success" ? "auth-success" : "auth-error-banner"
+              }
+            >
+              {banner.type === "success" ? "✓" : "✕"} &nbsp;{banner.msg}
             </div>
           )}
 
@@ -170,15 +243,20 @@ export default function UserLogin() {
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">✉</span>
                 <input
-                  id="email" type="email" className={`auth-input ${errors.email ? 'error' : ''}`}
+                  id="email"
+                  type="email"
+                  className={`auth-input ${errors.email ? "error" : ""}`}
                   placeholder="you@yourfarm.com"
                   value={form.email}
-                  onChange={e => set('email', e.target.value)}
-                  onMouseEnter={expand} onMouseLeave={shrink}
+                  onChange={(e) => set("email", e.target.value)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
                   autoComplete="email"
                 />
               </div>
-              {errors.email && <span className="auth-field-error">{errors.email}</span>}
+              {errors.email && (
+                <span className="auth-field-error">{errors.email}</span>
+              )}
             </div>
 
             {/* Password */}
@@ -187,51 +265,63 @@ export default function UserLogin() {
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">🔒</span>
                 <input
-                  id="password" type={showPw ? 'text' : 'password'}
-                  className={`auth-input ${errors.password ? 'error' : ''}`}
+                  id="password"
+                  type={showPw ? "text" : "password"}
+                  className={`auth-input ${errors.password ? "error" : ""}`}
                   placeholder="Your password"
                   value={form.password}
-                  onChange={e => set('password', e.target.value)}
-                  onMouseEnter={expand} onMouseLeave={shrink}
+                  onChange={(e) => set("password", e.target.value)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
                   autoComplete="current-password"
                 />
                 <button
-                  type="button" className="auth-pw-toggle"
-                  onClick={() => setShowPw(v => !v)}
-                  onMouseEnter={expand} onMouseLeave={shrink}
-                  aria-label={showPw ? 'Hide password' : 'Show password'}
+                  type="button"
+                  className="auth-pw-toggle"
+                  onClick={() => setShowPw((v) => !v)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
+                  aria-label={showPw ? "Hide password" : "Show password"}
                 >
-                  {showPw ? 'Hide' : 'Show'}
+                  {showPw ? "Hide" : "Show"}
                 </button>
               </div>
-              {errors.password && <span className="auth-field-error">{errors.password}</span>}
+              {errors.password && (
+                <span className="auth-field-error">{errors.password}</span>
+              )}
             </div>
 
             {/* Remember me */}
             <label className="auth-checkbox-row">
-              <input type="checkbox" onMouseEnter={expand} onMouseLeave={shrink} />
+              <input
+                type="checkbox"
+                onMouseEnter={expand}
+                onMouseLeave={shrink}
+              />
               Keep me signed in on this device
             </label>
 
             <button
-              type="submit" className="auth-submit"
+              type="submit"
+              className="auth-submit"
               disabled={loading}
-              onMouseEnter={expand} onMouseLeave={shrink}
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
             >
               <span className="auth-submit-inner">
                 {loading && <span className="auth-spinner" />}
-                {loading ? 'Signing In…' : 'Sign In to Dashboard'}
+                {loading ? "Signing In…" : "Sign In to Dashboard"}
               </span>
             </button>
           </form>
 
-          <div className="auth-footer-link" style={{ marginTop: '1.5rem' }}>
+          <div className="auth-footer-link" style={{ marginTop: "1.5rem" }}>
             Don't have an account?&nbsp;
             <Link to="/register" onMouseEnter={expand} onMouseLeave={shrink}>
               Create one here
             </Link>
           </div>
-          <div className="auth-footer-link" style={{ marginTop: '0.6rem' }}>
+          <div className="auth-footer-link" style={{ marginTop: "0.6rem" }}>
             <Link to="/" onMouseEnter={expand} onMouseLeave={shrink}>
               ← Back to homepage
             </Link>

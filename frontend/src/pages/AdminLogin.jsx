@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { loginUser } from '../firebase';
 import '../css/Auth.css';
+import logo from '../assets/logos/app.png';
 
 function Particles() {
   const items = Array.from({ length: 18 }, (_, i) => ({
@@ -74,13 +76,38 @@ export default function AdminLogin() {
     }
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
-    setLoading(true); setBanner(null);
-    await new Promise(r => setTimeout(r, 1500));
-    setLoading(false);
-    setAttempts(a => a + 1);
-    // Mock: replace with real admin auth
-    setBanner({ type: 'success', msg: 'Admin authenticated. Redirecting to control panel…' });
-    setTimeout(() => navigate('/dashboard'), 1600);
+    setLoading(true);
+    setBanner(null);
+    try {
+      const { role, userData } = await loginUser(form.email, form.password);
+      // Block non-admins from using this portal
+      if (role !== 'admin') {
+        setBanner({ type: 'error', msg: 'This portal is for administrators only. Use the Farmer login instead.' });
+        setLoading(false);
+        return;
+      }
+      // Verify admin ID matches stored record (optional extra check)
+      if (userData.adminId && form.adminId && userData.adminId !== form.adminId) {
+        setBanner({ type: 'error', msg: 'Admin ID does not match our records.' });
+        setAttempts(a => a + 1);
+        setLoading(false);
+        return;
+      }
+      setBanner({ type: 'success', msg: 'Admin authenticated. Redirecting to control panel…' });
+      setTimeout(() => navigate('/admin/dashboard'), 1200);
+    } catch (err) {
+      setAttempts(a => a + 1);
+      const msg =
+        err.code === 'auth/invalid-credential' ? 'Incorrect email or password.' :
+        err.code === 'auth/user-not-found'     ? 'No admin account found with this email.' :
+        err.code === 'auth/wrong-password'     ? 'Incorrect password.' :
+        err.code === 'auth/too-many-requests'  ? 'Too many failed attempts. Account temporarily locked.' :
+        err.code === 'auth/user-disabled'      ? 'This account has been disabled.' :
+        err.message || 'Login failed. Please try again.';
+      setBanner({ type: 'error', msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const expand = () => ringRef.current?.classList.add('expanded');
@@ -99,6 +126,10 @@ export default function AdminLogin() {
         <div className="auth-geo auth-geo-circle-inner" />
         <Particles />
 
+        <Link to="/" className="auth-brand" onMouseEnter={expand} onMouseLeave={shrink}>
+          <img src={logo} alt="Poltrifarm" className="auth-brand-logo" />
+          <div className="auth-brand-name">POLTRI<span>FARM</span></div>
+        </Link>
 
         <div className="auth-left-body">
           <div className="auth-left-eyebrow">Administrator Portal</div>

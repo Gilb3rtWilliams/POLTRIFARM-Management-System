@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { registerUser } from '../firebase';
 import '../css/Auth.css';
+import logo from '../assets/logos/app.png';
 
 function Particles() {
   const items = Array.from({ length: 18 }, (_, i) => ({
@@ -86,10 +88,26 @@ export default function UserRegister() {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setLoading(false);
-    setSuccess(true);
-    setTimeout(() => navigate('/login'), 2200);
+    try {
+      await registerUser({
+        email:    form.email,
+        password: form.password,
+        name:     `${form.firstName} ${form.lastName}`.trim(),
+        farmName: form.farmName,
+        role:     'farmer',
+      });
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 2200);
+    } catch (err) {
+      const msg =
+        err.code === 'auth/email-already-in-use' ? 'An account with this email already exists.' :
+        err.code === 'auth/invalid-email'         ? 'Please enter a valid email address.' :
+        err.code === 'auth/weak-password'         ? 'Password is too weak. Use at least 8 characters.' :
+        'Registration failed. Please try again.';
+      setErrors({ submit: msg });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const expand = () => ringRef.current?.classList.add('expanded');
@@ -111,6 +129,10 @@ export default function UserRegister() {
         <div className="auth-geo auth-geo-circle-inner" />
         <Particles />
 
+        <Link to="/" className="auth-brand" onMouseEnter={expand} onMouseLeave={shrink}>
+          <img src={logo} alt="Poltrifarm" className="auth-brand-logo" />
+          <div className="auth-brand-name">POLTRI<span>FARM</span></div>
+        </Link>
 
         <div className="auth-left-body">
           <div className="auth-left-eyebrow">Farmer Portal</div>
@@ -245,9 +267,12 @@ export default function UserRegister() {
                 <input type="checkbox" checked={agreed}
                   onChange={e => { setAgreed(e.target.checked); if (errors.terms) setErrors(er => ({ ...er, terms: null })); }}
                   onMouseEnter={expand} onMouseLeave={shrink} />
-                I agree to the&nbsp;<a href="/terms">Terms of Service</a>&nbsp;and&nbsp;<a href="/privacy">Privacy Policy</a>
+                I agree to the&nbsp;<a href="#">Terms of Service</a>&nbsp;and&nbsp;<a href="#">Privacy Policy</a>
               </label>
               {errors.terms && <span className="auth-field-error">{errors.terms}</span>}
+              {errors.submit && (
+                <div className="auth-error-banner">✕ &nbsp;{errors.submit}</div>
+              )}
 
               <button type="submit" className="auth-submit" disabled={loading}
                 onMouseEnter={expand} onMouseLeave={shrink}>
