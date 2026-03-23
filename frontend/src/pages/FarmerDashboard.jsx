@@ -641,7 +641,7 @@ export default function FarmerDashboard() {
         .db-layout{display:flex;min-height:100vh;}
 
         /* Sidebar */
-        .sidebar{width:260px;background:var(--navy-dark);border-right:1px solid rgba(201,168,76,.1);display:flex;flex-direction:column;transition:width .3s var(--ease);flex-shrink:0;position:relative;z-index:100;}
+        .sidebar{width:260px;min-height:200px;background:var(--navy-dark);border-right:1px solid rgba(201,168,76,.1);display:flex;flex-direction:column;transition:width .3s var(--ease);flex-shrink:0;position:relative;z-index:100;}
         .sidebar.collapsed{width:72px;}
         .sb-header{padding:1.5rem 1.2rem 1rem;border-bottom:1px solid rgba(201,168,76,.08);}
         .sb-logo{font-family:var(--font-d);font-size:1.1rem;font-weight:700;letter-spacing:.12em;white-space:nowrap;overflow:hidden;}
@@ -670,7 +670,7 @@ export default function FarmerDashboard() {
 
         /* Main */
         .db-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
-        .db-topbar{height:60px;background:var(--navy-dark);border-bottom:1px solid rgba(201,168,76,.08);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;flex-shrink:0;}
+        .db-topbar{min-height:200px;background:var(--navy-dark);border-bottom:1px solid rgba(201,168,76,.08);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;flex-shrink:0;}
         .topbar-title{font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:var(--white);}
         .topbar-right{display:flex;align-items:center;gap:1rem;}
         .topbar-badge{padding:.3rem .8rem;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;border:1px solid rgba(201,168,76,.25);color:var(--gold);background:rgba(201,168,76,.06);}

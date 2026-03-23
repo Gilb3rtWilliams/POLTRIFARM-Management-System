@@ -7,9 +7,11 @@ import UserLogin from "./pages/UserLogin";
 import UserRegister from "./pages/UserRegister";
 import AdminLogin from "./pages/AdminLogin";
 import AdminRegister from "./pages/AdminRegister";
-import Privacy from "./pages/Privacy";
 import FarmerDashboard from "./pages/FarmerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import TermsOfService from "./pages/TermsOfService";
 import "react-toastify/dist/ReactToastify.css";
 import "./css/App.css";
 
@@ -31,7 +33,9 @@ const App = () => {
             <Route path="/register" element={<UserRegister />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/register" element={<AdminRegister />} />
-            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
             {/* Protected Routes */}
             <Route path="/farmer/dashboard" element={<FarmerDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />

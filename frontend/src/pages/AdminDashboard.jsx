@@ -1,54 +1,233 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  auth, logoutUser, getCurrentUserData,
-  getAllUsers, approveUser, banUser, updateUserRole, listenToAllUsers,
-} from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+  auth,
+  logoutUser,
+  getCurrentUserData,
+  getAllUsers,
+  approveUser,
+  banUser,
+  updateUserRole,
+  listenToAllUsers,
+} from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 /* ─── MOCK DATA ─────────────────────────────────────────────────────────────── */
 const MOCK_USERS = [
-  { id:'u1', name:'Gilbert Nyange',   email:'gilbert@farm.com',   role:'farmer', farmName:'Nyange Poultry',    approved:true,  createdAt:'2026-01-10', birds:1000, eggs:284, revenue:35400 },
-  { id:'u2', name:'Amina Wanjiru',    email:'amina@sunrisefarm.ke',role:'farmer', farmName:'Sunrise Poultry',   approved:true,  createdAt:'2026-01-22', birds:650,  eggs:198, revenue:21800 },
-  { id:'u3', name:'John Kamau',       email:'john@kamaufarm.com',  role:'farmer', farmName:'Kamau Farm',         approved:true,  createdAt:'2026-02-05', birds:420,  eggs:110, revenue:14200 },
-  { id:'u4', name:'Fatuma Hassan',    email:'fatuma@hassan.co.ke', role:'farmer', farmName:'Hassan Layers',      approved:false, createdAt:'2026-03-14', birds:0,    eggs:0,   revenue:0 },
-  { id:'u5', name:'Peter Otieno',     email:'peter@otieno.farm',   role:'farmer', farmName:'Otieno Broilers',    approved:true,  createdAt:'2026-02-18', birds:800,  eggs:0,   revenue:28600 },
-  { id:'u6', name:'Grace Muthoni',    email:'grace@admin.com',     role:'admin',  farmName:'',                   approved:true,  createdAt:'2025-12-01', birds:null, eggs:null,revenue:null },
-  { id:'u7', name:'David Kipchoge',   email:'david@kipchoge.farm', role:'farmer', farmName:'Kipchoge Poultry',   approved:false, createdAt:'2026-03-17', birds:0,    eggs:0,   revenue:0 },
+  {
+    id: "u1",
+    name: "Gilbert Nyange",
+    email: "gilbert@farm.com",
+    role: "farmer",
+    farmName: "Nyange Poultry",
+    approved: true,
+    createdAt: "2026-01-10",
+    birds: 1000,
+    eggs: 284,
+    revenue: 35400,
+  },
+  {
+    id: "u2",
+    name: "Amina Wanjiru",
+    email: "amina@sunrisefarm.ke",
+    role: "farmer",
+    farmName: "Sunrise Poultry",
+    approved: true,
+    createdAt: "2026-01-22",
+    birds: 650,
+    eggs: 198,
+    revenue: 21800,
+  },
+  {
+    id: "u3",
+    name: "John Kamau",
+    email: "john@kamaufarm.com",
+    role: "farmer",
+    farmName: "Kamau Farm",
+    approved: true,
+    createdAt: "2026-02-05",
+    birds: 420,
+    eggs: 110,
+    revenue: 14200,
+  },
+  {
+    id: "u4",
+    name: "Fatuma Hassan",
+    email: "fatuma@hassan.co.ke",
+    role: "farmer",
+    farmName: "Hassan Layers",
+    approved: false,
+    createdAt: "2026-03-14",
+    birds: 0,
+    eggs: 0,
+    revenue: 0,
+  },
+  {
+    id: "u5",
+    name: "Peter Otieno",
+    email: "peter@otieno.farm",
+    role: "farmer",
+    farmName: "Otieno Broilers",
+    approved: true,
+    createdAt: "2026-02-18",
+    birds: 800,
+    eggs: 0,
+    revenue: 28600,
+  },
+  {
+    id: "u6",
+    name: "Grace Muthoni",
+    email: "grace@admin.com",
+    role: "admin",
+    farmName: "",
+    approved: true,
+    createdAt: "2025-12-01",
+    birds: null,
+    eggs: null,
+    revenue: null,
+  },
+  {
+    id: "u7",
+    name: "David Kipchoge",
+    email: "david@kipchoge.farm",
+    role: "farmer",
+    farmName: "Kipchoge Poultry",
+    approved: false,
+    createdAt: "2026-03-17",
+    birds: 0,
+    eggs: 0,
+    revenue: 0,
+  },
 ];
 
 const SYSTEM_STATS = [
-  { icon:'🏗️', val:'5',          label:'Active Farms',          color:'var(--gold)',    trend:'↑ 2 this month' },
-  { icon:'🐔', val:'2,870',      label:'Total Birds Monitored', color:'var(--success)', trend:'↑ 12% vs last month' },
-  { icon:'🥚', val:'592',        label:'Eggs Collected Today',  color:'var(--info)',    trend:'↑ 8%' },
-  { icon:'💰', val:'KSh 100K',   label:'System Revenue (Mar)',  color:'var(--success)', trend:'↑ 18%' },
-  { icon:'⏳', val:'2',          label:'Pending Approvals',     color:'var(--warning)', trend:'Needs action' },
-  { icon:'🔴', val:'3',          label:'Critical Sensor Alerts',color:'var(--danger)',  trend:'Across 2 farms' },
+  {
+    icon: "🏗️",
+    val: "5",
+    label: "Active Farms",
+    color: "var(--gold)",
+    trend: "↑ 2 this month",
+  },
+  {
+    icon: "🐔",
+    val: "2,870",
+    label: "Total Birds Monitored",
+    color: "var(--success)",
+    trend: "↑ 12% vs last month",
+  },
+  {
+    icon: "🥚",
+    val: "592",
+    label: "Eggs Collected Today",
+    color: "var(--info)",
+    trend: "↑ 8%",
+  },
+  {
+    icon: "💰",
+    val: "KSh 100K",
+    label: "System Revenue (Mar)",
+    color: "var(--success)",
+    trend: "↑ 18%",
+  },
+  {
+    icon: "⏳",
+    val: "2",
+    label: "Pending Approvals",
+    color: "var(--warning)",
+    trend: "Needs action",
+  },
+  {
+    icon: "🔴",
+    val: "3",
+    label: "Critical Sensor Alerts",
+    color: "var(--danger)",
+    trend: "Across 2 farms",
+  },
 ];
 
 const FARM_PERFORMANCE = [
-  { farm:'Nyange Poultry',   farmer:'Gilbert Nyange', birds:1000, eggs:284, revenue:35400, health:'good',    uptime:'99.2%' },
-  { farm:'Sunrise Poultry',  farmer:'Amina Wanjiru',  birds:650,  eggs:198, revenue:21800, health:'good',    uptime:'98.8%' },
-  { farm:'Kamau Farm',       farmer:'John Kamau',     birds:420,  eggs:110, revenue:14200, health:'warning', uptime:'97.1%' },
-  { farm:'Otieno Broilers',  farmer:'Peter Otieno',   birds:800,  eggs:0,   revenue:28600, health:'good',    uptime:'99.5%' },
-  { farm:'Hassan Layers',    farmer:'Fatuma Hassan',  birds:0,    eggs:0,   revenue:0,     health:'pending', uptime:'—' },
+  {
+    farm: "Nyange Poultry",
+    farmer: "Gilbert Nyange",
+    birds: 1000,
+    eggs: 284,
+    revenue: 35400,
+    health: "good",
+    uptime: "99.2%",
+  },
+  {
+    farm: "Sunrise Poultry",
+    farmer: "Amina Wanjiru",
+    birds: 650,
+    eggs: 198,
+    revenue: 21800,
+    health: "good",
+    uptime: "98.8%",
+  },
+  {
+    farm: "Kamau Farm",
+    farmer: "John Kamau",
+    birds: 420,
+    eggs: 110,
+    revenue: 14200,
+    health: "warning",
+    uptime: "97.1%",
+  },
+  {
+    farm: "Otieno Broilers",
+    farmer: "Peter Otieno",
+    birds: 800,
+    eggs: 0,
+    revenue: 28600,
+    health: "good",
+    uptime: "99.5%",
+  },
+  {
+    farm: "Hassan Layers",
+    farmer: "Fatuma Hassan",
+    birds: 0,
+    eggs: 0,
+    revenue: 0,
+    health: "pending",
+    uptime: "—",
+  },
 ];
 
 const SYSTEM_ALERTS = [
-  { type:'danger',  farm:'Kamau Farm',    msg:'Water trough at 12% — critical depletion',         time:'4m ago' },
-  { type:'warning', farm:'Sunrise Farm',  msg:'Shed temperature at 32°C — approaching threshold',  time:'11m ago' },
-  { type:'danger',  farm:'Nyange Farm',   msg:'Batch D mortality spike — 14 birds this week',      time:'1h ago' },
-  { type:'info',    farm:'System',        msg:'2 new admin registration requests awaiting review',  time:'2h ago' },
+  {
+    type: "danger",
+    farm: "Kamau Farm",
+    msg: "Water trough at 12% — critical depletion",
+    time: "4m ago",
+  },
+  {
+    type: "warning",
+    farm: "Sunrise Farm",
+    msg: "Shed temperature at 32°C — approaching threshold",
+    time: "11m ago",
+  },
+  {
+    type: "danger",
+    farm: "Nyange Farm",
+    msg: "Batch D mortality spike — 14 birds this week",
+    time: "1h ago",
+  },
+  {
+    type: "info",
+    farm: "System",
+    msg: "2 new admin registration requests awaiting review",
+    time: "2h ago",
+  },
 ];
 
 const SENSOR_OVERVIEW = [
-  { farm:'Nyange Poultry',  online:6, offline:0, critical:1, warning:2 },
-  { farm:'Sunrise Poultry', online:6, offline:0, critical:0, warning:1 },
-  { farm:'Kamau Farm',      online:5, offline:1, critical:2, warning:1 },
-  { farm:'Otieno Broilers', online:6, offline:0, critical:0, warning:0 },
+  { farm: "Nyange Poultry", online: 6, offline: 0, critical: 1, warning: 2 },
+  { farm: "Sunrise Poultry", online: 6, offline: 0, critical: 0, warning: 1 },
+  { farm: "Kamau Farm", online: 5, offline: 1, critical: 2, warning: 1 },
+  { farm: "Otieno Broilers", online: 6, offline: 0, critical: 0, warning: 0 },
 ];
 
-const fmt = n => n != null ? `KSh ${Number(n).toLocaleString()}` : '—';
+const fmt = (n) => (n != null ? `KSh ${Number(n).toLocaleString()}` : "—");
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    ADMIN DASHBOARD
@@ -56,27 +235,36 @@ const fmt = n => n != null ? `KSh ${Number(n).toLocaleString()}` : '—';
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
-  const [adminUser, setAdminUser]     = useState({ name:'System Administrator', email:'admin@poltrifarm.com' });
-  const [activeTab, setActiveTab]     = useState('overview');
-  const [sidebarOpen, setSidebar]     = useState(true);
-  const [users, setUsers]             = useState(MOCK_USERS);
-  const [loading, setLoading]         = useState(false);
-  const [confirmAction, setConfirm]   = useState(null); // { type, userId, name }
-  const [userFilter, setUserFilter]   = useState('all');
-  const [searchQ, setSearchQ]         = useState('');
+  const [adminUser, setAdminUser] = useState({
+    name: "System Administrator",
+    email: "admin@poltrifarm.com",
+  });
+  const [activeTab, setActiveTab] = useState("overview");
+  const [sidebarOpen, setSidebar] = useState(true);
+  const [users, setUsers] = useState(MOCK_USERS);
+  const [loading, setLoading] = useState(false);
+  const [confirmAction, setConfirm] = useState(null); // { type, userId, name }
+  const [userFilter, setUserFilter] = useState("all");
+  const [searchQ, setSearchQ] = useState("");
 
-  const cursorDot  = useRef(null);
+  const cursorDot = useRef(null);
   const cursorRing = useRef(null);
-  const mouse      = useRef({ x:-200, y:-200 });
-  const pos        = useRef({ x:-200, y:-200 });
+  const mouse = useRef({ x: -200, y: -200 });
+  const pos = useRef({ x: -200, y: -200 });
 
   /* -- Firebase auth check -- */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) { navigate('/admin/login'); return; }
+      if (!firebaseUser) {
+        navigate("/admin/login");
+        return;
+      }
       try {
         const data = await getCurrentUserData(firebaseUser.uid);
-        if (!data || data.role !== 'admin') { navigate('/dashboard'); return; }
+        if (!data || data.role !== "admin") {
+          navigate("/dashboard");
+          return;
+        }
         setAdminUser(data);
         // Real-time user listener
         const unsubUsers = listenToAllUsers(setUsers);
@@ -90,58 +278,92 @@ export default function AdminDashboard() {
 
   /* -- cursor -- */
   useEffect(() => {
-    const move = e => { mouse.current.x = e.clientX; mouse.current.y = e.clientY; };
-    window.addEventListener('mousemove', move);
+    const move = (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+    };
+    window.addEventListener("mousemove", move);
     let raf;
     const loop = () => {
       pos.current.x += (mouse.current.x - pos.current.x) * 0.1;
       pos.current.y += (mouse.current.y - pos.current.y) * 0.1;
       if (cursorDot.current)
-        cursorDot.current.style.transform = `translate(${mouse.current.x-5}px,${mouse.current.y-5}px)`;
+        cursorDot.current.style.transform = `translate(${
+          mouse.current.x - 5
+        }px,${mouse.current.y - 5}px)`;
       if (cursorRing.current)
-        cursorRing.current.style.transform = `translate(${pos.current.x-18}px,${pos.current.y-18}px)`;
+        cursorRing.current.style.transform = `translate(${
+          pos.current.x - 18
+        }px,${pos.current.y - 18}px)`;
       raf = requestAnimationFrame(loop);
     };
     loop();
-    return () => { window.removeEventListener('mousemove', move); cancelAnimationFrame(raf); };
+    return () => {
+      window.removeEventListener("mousemove", move);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   /* -- handlers -- */
-  const handleLogout = async () => { await logoutUser(); navigate('/admin/login'); };
+  const handleLogout = async () => {
+    await logoutUser();
+    navigate("/admin/login");
+  };
 
   const handleApprove = async (userId) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, approved:true } : u));
-    try { await approveUser(userId); } catch {}
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, approved: true } : u)),
+    );
+    try {
+      await approveUser(userId);
+    } catch {}
     setConfirm(null);
   };
 
   const handleBan = async (userId) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, approved:false } : u));
-    try { await banUser(userId); } catch {}
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, approved: false } : u)),
+    );
+    try {
+      await banUser(userId);
+    } catch {}
     setConfirm(null);
   };
 
   const handleRoleChange = async (userId, role) => {
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u));
-    try { await updateUserRole(userId, role); } catch {}
+    setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role } : u)));
+    try {
+      await updateUserRole(userId, role);
+    } catch {}
   };
 
   /* -- derived -- */
-  const pendingUsers  = users.filter(u => !u.approved);
-  const farmerUsers   = users.filter(u => u.role === 'farmer');
-  const adminUsers    = users.filter(u => u.role === 'admin');
+  const pendingUsers = users.filter((u) => !u.approved);
+  const farmerUsers = users.filter((u) => u.role === "farmer");
+  const adminUsers = users.filter((u) => u.role === "admin");
   const filteredUsers = users
-    .filter(u => userFilter === 'all' ? true : userFilter === 'pending' ? !u.approved : u.role === userFilter)
-    .filter(u => !searchQ || u.name.toLowerCase().includes(searchQ.toLowerCase()) || u.email.toLowerCase().includes(searchQ.toLowerCase()));
+    .filter((u) =>
+      userFilter === "all"
+        ? true
+        : userFilter === "pending"
+        ? !u.approved
+        : u.role === userFilter,
+    )
+    .filter(
+      (u) =>
+        !searchQ ||
+        u.name.toLowerCase().includes(searchQ.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchQ.toLowerCase()),
+    );
 
   /* ── NAV ── */
   const NAV = [
-    { id:'overview',   icon:'⊞',  label:'System Overview'     },
-    { id:'users',      icon:'👥', label:'User Management'     },
-    { id:'farms',      icon:'🏗️', label:'Farm Analytics'      },
-    { id:'sensors',    icon:'📡', label:'Sensor Network'      },
-    { id:'finance',    icon:'📊', label:'Financial Reports'   },
-    { id:'onboarding', icon:'➕', label:'Farm Onboarding'     },
+    { id: "overview", icon: "⊞", label: "System Overview" },
+    { id: "users", icon: "👥", label: "User Management" },
+    { id: "farms", icon: "🏗️", label: "Farm Analytics" },
+    { id: "sensors", icon: "📡", label: "Sensor Network" },
+    { id: "finance", icon: "📊", label: "Financial Reports" },
+    { id: "onboarding", icon: "➕", label: "Farm Onboarding" },
   ];
 
   /* ─────────────────────────────────────────────────────────────────────────── */
@@ -164,10 +386,10 @@ export default function AdminDashboard() {
         .c-dot{width:10px;height:10px;background:var(--gold);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9999;}
         .c-ring{width:36px;height:36px;border:1px solid rgba(201,168,76,.4);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:9998;transition:width .25s,height .25s;}
 
-        .db-layout{display:flex;min-height:100vh;}
+        .db-layout{display:flex;min-height:2000px;}
 
         /* ─── Sidebar — slightly different treatment from farmer (more "command center" feel) ─── */
-        .sidebar{width:260px;background:var(--navy-dark);border-right:1px solid rgba(201,168,76,.08);display:flex;flex-direction:column;transition:width .3s var(--ease);flex-shrink:0;position:relative;z-index:100;}
+        .sidebar{width:260px;min-height:2000px;background:var(--navy-dark);border-right:1px solid rgba(201,168,76,.08);display:flex;flex-direction:column;transition:width .3s var(--ease);flex-shrink:0;position:relative;z-index:100;}
         .sidebar.collapsed{width:72px;}
         .sb-header{padding:1.5rem 1.2rem 1rem;border-bottom:1px solid rgba(201,168,76,.08);}
         .sb-admin-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .6rem;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:.5rem;white-space:nowrap;}
@@ -191,7 +413,7 @@ export default function AdminDashboard() {
         .sb-toggle{position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:24px;height:24px;background:var(--navy-mid);border:1px solid rgba(201,168,76,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:none;font-size:.65rem;color:var(--gold);z-index:10;}
 
         .db-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
-        .db-topbar{height:60px;background:var(--navy-dark);border-bottom:1px solid rgba(201,168,76,.08);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;flex-shrink:0;}
+        .db-topbar{height:200px;background:var(--navy-dark);border-bottom:1px solid rgba(201,168,76,.08);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;flex-shrink:0;}
         .topbar-title{font-family:var(--font-d);font-size:1.1rem;font-weight:300;color:var(--white);}
         .topbar-right{display:flex;align-items:center;gap:1rem;}
         .admin-chip{padding:.3rem .9rem;font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;border:1px solid rgba(201,168,76,.3);color:var(--gold);background:rgba(201,168,76,.07);}
@@ -314,35 +536,47 @@ export default function AdminDashboard() {
       `}</style>
 
       {/* Cursor */}
-      <div className="c-dot"  ref={cursorDot}  />
+      <div className="c-dot" ref={cursorDot} />
       <div className="c-ring" ref={cursorRing} />
 
       <div className="db-layout">
         {/* ── SIDEBAR ── */}
-        <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+        <aside className={`sidebar ${sidebarOpen ? "" : "collapsed"}`}>
           <div className="sb-header">
             {sidebarOpen && <div className="sb-admin-badge">◆ Admin Panel</div>}
             <div className="sb-logo">
-              {sidebarOpen ? <span style={{ color:'var(--gold)' }}>POLTRI<span style={{ color:'var(--white)' }}>FARM</span></span> : <span style={{ color:'var(--gold)' }}>P</span>}
+              {sidebarOpen ? (
+                <span style={{ color: "var(--gold)" }}>
+                  POLTRI<span style={{ color: "var(--white)" }}>FARM</span>
+                </span>
+              ) : (
+                <span style={{ color: "var(--gold)" }}>P</span>
+              )}
             </div>
           </div>
 
           {sidebarOpen && (
             <div className="sb-profile">
-              <div className="sb-avatar">{adminUser.name?.slice(0,2).toUpperCase() || 'AD'}</div>
+              <div className="sb-avatar">
+                {adminUser.name?.slice(0, 2).toUpperCase() || "AD"}
+              </div>
               <div className="sb-info">
-                <div className="sb-name">{adminUser.name || 'Administrator'}</div>
+                <div className="sb-name">
+                  {adminUser.name || "Administrator"}
+                </div>
                 <div className="sb-role">◆ Admin</div>
               </div>
             </div>
           )}
 
           <nav className="sb-nav">
-            {sidebarOpen && <div className="sb-section-label">Control Panel</div>}
-            {NAV.map(item => (
+            {sidebarOpen && (
+              <div className="sb-section-label">Control Panel</div>
+            )}
+            {NAV.map((item) => (
               <div
                 key={item.id}
-                className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                className={`nav-item ${activeTab === item.id ? "active" : ""}`}
                 onClick={() => setActiveTab(item.id)}
               >
                 <span className="nav-icon">{item.icon}</span>
@@ -358,9 +592,29 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          <button className="sb-toggle" onClick={() => setSidebar(v => !v)}
-            style={{ position:'absolute', right:'-12px', top:'50%', transform:'translateY(-50%)', width:24, height:24, background:'var(--navy-mid)', border:'1px solid rgba(201,168,76,.2)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', cursor:'none', fontSize:'.65rem', color:'var(--gold)', zIndex:10 }}>
-            {sidebarOpen ? '‹' : '›'}
+          <button
+            className="sb-toggle"
+            onClick={() => setSidebar((v) => !v)}
+            style={{
+              position: "absolute",
+              right: "-12px",
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 24,
+              height: 24,
+              background: "var(--navy-mid)",
+              border: "1px solid rgba(201,168,76,.2)",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "none",
+              fontSize: ".65rem",
+              color: "var(--gold)",
+              zIndex: 10,
+            }}
+          >
+            {sidebarOpen ? "‹" : "›"}
           </button>
         </aside>
 
@@ -369,13 +623,21 @@ export default function AdminDashboard() {
           {/* Topbar */}
           <div className="db-topbar">
             <div className="topbar-title">
-              {NAV.find(n => n.id === activeTab)?.label || 'System Overview'}
+              {NAV.find((n) => n.id === activeTab)?.label || "System Overview"}
             </div>
             <div className="topbar-right">
               <span className="admin-chip">◆ Administrator</span>
               {pendingUsers.length > 0 && (
-                <div className="alert-pip-wrap" style={{ position:'relative' }}>
-                  <span style={{ fontSize:'1.2rem', cursor:'none' }} onClick={() => setActiveTab('users')}>👥</span>
+                <div
+                  className="alert-pip-wrap"
+                  style={{ position: "relative" }}
+                >
+                  <span
+                    style={{ fontSize: "1.2rem", cursor: "none" }}
+                    onClick={() => setActiveTab("users")}
+                  >
+                    👥
+                  </span>
                   <span className="alert-pip" />
                 </div>
               )}
@@ -384,27 +646,60 @@ export default function AdminDashboard() {
 
           {/* Content */}
           <div className="db-content">
-
             {/* ══ SYSTEM OVERVIEW ══ */}
-            {activeTab === 'overview' && (
+            {activeTab === "overview" && (
               <>
                 {/* Pending banner */}
                 {pendingUsers.length > 0 && (
-                  <div style={{ display:'flex', alignItems:'center', gap:'.75rem', padding:'.8rem 1rem', background:'rgba(230,126,34,.07)', border:'1px solid rgba(230,126,34,.2)', marginBottom:'1.5rem' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: ".75rem",
+                      padding: ".8rem 1rem",
+                      background: "rgba(230,126,34,.07)",
+                      border: "1px solid rgba(230,126,34,.2)",
+                      marginBottom: "1.5rem",
+                    }}
+                  >
                     <span>⚠</span>
-                    <span style={{ fontSize:'.82rem' }}><strong>{pendingUsers.length}</strong> account{pendingUsers.length>1?'s':''} awaiting approval.</span>
-                    <button className="btn btn-warning btn-sm" style={{ marginLeft:'auto', background:'rgba(230,126,34,.1)', border:'1px solid rgba(230,126,34,.3)', color:'var(--warning)' }} onClick={() => setActiveTab('users')}>Review →</button>
+                    <span style={{ fontSize: ".82rem" }}>
+                      <strong>{pendingUsers.length}</strong> account
+                      {pendingUsers.length > 1 ? "s" : ""} awaiting approval.
+                    </span>
+                    <button
+                      className="btn btn-warning btn-sm"
+                      style={{
+                        marginLeft: "auto",
+                        background: "rgba(230,126,34,.1)",
+                        border: "1px solid rgba(230,126,34,.3)",
+                        color: "var(--warning)",
+                      }}
+                      onClick={() => setActiveTab("users")}
+                    >
+                      Review →
+                    </button>
                   </div>
                 )}
 
                 {/* System stats */}
-                <div className="section-hd"><div><div className="section-eyebrow">System</div><div className="section-title">Platform Overview</div></div></div>
+                <div className="section-hd">
+                  <div>
+                    <div className="section-eyebrow">System</div>
+                    <div className="section-title">Platform Overview</div>
+                  </div>
+                </div>
                 <div className="stats-grid">
-                  {SYSTEM_STATS.map(s => (
+                  {SYSTEM_STATS.map((s) => (
                     <div className="stat-card" key={s.label}>
-                      <div className="stat-top-bar" style={{ background:s.color }} />
+                      <div
+                        className="stat-top-bar"
+                        style={{ background: s.color }}
+                      />
                       <div className="stat-icon">{s.icon}</div>
-                      <div className="stat-value" style={{ color:s.color }}>{s.val}</div>
+                      <div className="stat-value" style={{ color: s.color }}>
+                        {s.val}
+                      </div>
                       <div className="stat-label">{s.label}</div>
                       <div className="stat-trend">{s.trend}</div>
                     </div>
@@ -412,12 +707,23 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* System alerts */}
-                <div className="section-hd" style={{ marginTop:'2rem' }}>
-                  <div><div className="section-eyebrow">Alerts</div><div className="section-title">System-wide Notifications</div></div>
+                <div className="section-hd" style={{ marginTop: "2rem" }}>
+                  <div>
+                    <div className="section-eyebrow">Alerts</div>
+                    <div className="section-title">
+                      System-wide Notifications
+                    </div>
+                  </div>
                 </div>
                 {SYSTEM_ALERTS.map((a, i) => (
                   <div key={i} className={`alert-strip alert-${a.type}`}>
-                    <span>{a.type==='danger'?'🔴':a.type==='warning'?'🟡':'ℹ'}</span>
+                    <span>
+                      {a.type === "danger"
+                        ? "🔴"
+                        : a.type === "warning"
+                        ? "🟡"
+                        : "ℹ"}
+                    </span>
                     <div>
                       <div className="alert-title">{a.farm}</div>
                       <div className="alert-sub">{a.msg}</div>
@@ -427,25 +733,79 @@ export default function AdminDashboard() {
                 ))}
 
                 {/* Farm performance table */}
-                <div className="section-hd" style={{ marginTop:'2rem' }}>
-                  <div><div className="section-eyebrow">Performance</div><div className="section-title">All Farms at a Glance</div></div>
-                  <button className="section-action" onClick={() => setActiveTab('farms')}>Full report →</button>
+                <div className="section-hd" style={{ marginTop: "2rem" }}>
+                  <div>
+                    <div className="section-eyebrow">Performance</div>
+                    <div className="section-title">All Farms at a Glance</div>
+                  </div>
+                  <button
+                    className="section-action"
+                    onClick={() => setActiveTab("farms")}
+                  >
+                    Full report →
+                  </button>
                 </div>
                 <div className="card">
                   <table className="data-table">
                     <thead>
-                      <tr><th>Farm</th><th>Farmer</th><th>Birds</th><th>Eggs/Day</th><th>Revenue</th><th>Health</th><th>Uptime</th></tr>
+                      <tr>
+                        <th>Farm</th>
+                        <th>Farmer</th>
+                        <th>Birds</th>
+                        <th>Eggs/Day</th>
+                        <th>Revenue</th>
+                        <th>Health</th>
+                        <th>Uptime</th>
+                      </tr>
                     </thead>
                     <tbody>
-                      {FARM_PERFORMANCE.map(f => (
+                      {FARM_PERFORMANCE.map((f) => (
                         <tr key={f.farm}>
-                          <td style={{ fontWeight:500 }}>{f.farm}</td>
-                          <td style={{ color:'var(--muted)', fontSize:'.75rem' }}>{f.farmer}</td>
-                          <td>{f.birds?.toLocaleString() || '—'}</td>
-                          <td>{f.eggs || '—'}</td>
-                          <td style={{ fontFamily:'var(--font-d)', color:'var(--gold)' }}>{fmt(f.revenue)}</td>
-                          <td><span className={`badge badge-${f.health==='good'?'success':f.health==='warning'?'warning':f.health==='pending'?'muted':'danger'}`}>{f.health}</span></td>
-                          <td style={{ color: f.uptime==='—'?'var(--muted)':'var(--success)', fontSize:'.78rem' }}>{f.uptime}</td>
+                          <td style={{ fontWeight: 500 }}>{f.farm}</td>
+                          <td
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: ".75rem",
+                            }}
+                          >
+                            {f.farmer}
+                          </td>
+                          <td>{f.birds?.toLocaleString() || "—"}</td>
+                          <td>{f.eggs || "—"}</td>
+                          <td
+                            style={{
+                              fontFamily: "var(--font-d)",
+                              color: "var(--gold)",
+                            }}
+                          >
+                            {fmt(f.revenue)}
+                          </td>
+                          <td>
+                            <span
+                              className={`badge badge-${
+                                f.health === "good"
+                                  ? "success"
+                                  : f.health === "warning"
+                                  ? "warning"
+                                  : f.health === "pending"
+                                  ? "muted"
+                                  : "danger"
+                              }`}
+                            >
+                              {f.health}
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              color:
+                                f.uptime === "—"
+                                  ? "var(--muted)"
+                                  : "var(--success)",
+                              fontSize: ".78rem",
+                            }}
+                          >
+                            {f.uptime}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -455,30 +815,63 @@ export default function AdminDashboard() {
             )}
 
             {/* ══ USER MANAGEMENT ══ */}
-            {activeTab === 'users' && (
+            {activeTab === "users" && (
               <>
-                <div style={{ marginBottom:'1.5rem' }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <div className="section-eyebrow">Management</div>
                   <div className="section-title">User Management</div>
                 </div>
 
                 {/* Pending approvals */}
                 {pendingUsers.length > 0 && (
-                  <div style={{ marginBottom:'2rem' }}>
-                    <div style={{ fontFamily:'var(--font-d)', fontSize:'1rem', marginBottom:'1rem', color:'var(--warning)' }}>
+                  <div style={{ marginBottom: "2rem" }}>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-d)",
+                        fontSize: "1rem",
+                        marginBottom: "1rem",
+                        color: "var(--warning)",
+                      }}
+                    >
                       ⏳ Pending Approvals ({pendingUsers.length})
                     </div>
-                    {pendingUsers.map(u => (
+                    {pendingUsers.map((u) => (
                       <div className="pending-card" key={u.id}>
-                        <div className="pending-avatar">{u.name.slice(0,2).toUpperCase()}</div>
+                        <div className="pending-avatar">
+                          {u.name.slice(0, 2).toUpperCase()}
+                        </div>
                         <div className="pending-body">
                           <div className="pending-name">{u.name}</div>
                           <div className="pending-email">{u.email}</div>
-                          <div className="pending-date">Registered: {u.createdAt} · Role requested: {u.role}</div>
+                          <div className="pending-date">
+                            Registered: {u.createdAt} · Role requested: {u.role}
+                          </div>
                         </div>
                         <div className="pending-actions">
-                          <button className="btn btn-success btn-sm" onClick={() => setConfirm({ type:'approve', userId:u.id, name:u.name })}>Approve</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type:'ban', userId:u.id, name:u.name })}>Reject</button>
+                          <button
+                            className="btn btn-success btn-sm"
+                            onClick={() =>
+                              setConfirm({
+                                type: "approve",
+                                userId: u.id,
+                                name: u.name,
+                              })
+                            }
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() =>
+                              setConfirm({
+                                type: "ban",
+                                userId: u.id,
+                                name: u.name,
+                              })
+                            }
+                          >
+                            Reject
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -489,12 +882,23 @@ export default function AdminDashboard() {
                 {/* Search + filter */}
                 <div className="search-bar">
                   <span className="search-icon">🔍</span>
-                  <input className="search-input" placeholder="Search users by name or email…" value={searchQ} onChange={e => setSearchQ(e.target.value)} />
+                  <input
+                    className="search-input"
+                    placeholder="Search users by name or email…"
+                    value={searchQ}
+                    onChange={(e) => setSearchQ(e.target.value)}
+                  />
                 </div>
                 <div className="filter-tabs">
-                  {['all','farmer','admin','pending'].map(f => (
-                    <button key={f} className={`filter-tab ${userFilter===f?'active':''}`} onClick={() => setUserFilter(f)}>
-                      {f.charAt(0).toUpperCase()+f.slice(1)}
+                  {["all", "farmer", "admin", "pending"].map((f) => (
+                    <button
+                      key={f}
+                      className={`filter-tab ${
+                        userFilter === f ? "active" : ""
+                      }`}
+                      onClick={() => setUserFilter(f)}
+                    >
+                      {f.charAt(0).toUpperCase() + f.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -502,31 +906,100 @@ export default function AdminDashboard() {
                 <div className="card">
                   <table className="data-table">
                     <thead>
-                      <tr><th>Name</th><th>Email</th><th>Farm</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Farm</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                      </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.map(u => (
+                      {filteredUsers.map((u) => (
                         <tr key={u.id}>
-                          <td style={{ fontWeight:500 }}>{u.name}</td>
-                          <td style={{ color:'var(--muted)', fontSize:'.75rem' }}>{u.email}</td>
-                          <td style={{ color:'var(--muted)', fontSize:'.75rem' }}>{u.farmName || '—'}</td>
+                          <td style={{ fontWeight: 500 }}>{u.name}</td>
+                          <td
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: ".75rem",
+                            }}
+                          >
+                            {u.email}
+                          </td>
+                          <td
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: ".75rem",
+                            }}
+                          >
+                            {u.farmName || "—"}
+                          </td>
                           <td>
                             <select
                               value={u.role}
-                              onChange={e => handleRoleChange(u.id, e.target.value)}
-                              style={{ background:'var(--navy-dark)', border:'1px solid rgba(201,168,76,.15)', color:'var(--gold)', padding:'.2rem .5rem', fontSize:'.7rem', cursor:'none' }}
+                              onChange={(e) =>
+                                handleRoleChange(u.id, e.target.value)
+                              }
+                              style={{
+                                background: "var(--navy-dark)",
+                                border: "1px solid rgba(201,168,76,.15)",
+                                color: "var(--gold)",
+                                padding: ".2rem .5rem",
+                                fontSize: ".7rem",
+                                cursor: "none",
+                              }}
                             >
                               <option value="farmer">Farmer</option>
                               <option value="admin">Admin</option>
                             </select>
                           </td>
-                          <td><span className={`badge badge-${u.approved?'success':'warning'}`}>{u.approved?'Active':'Pending'}</span></td>
-                          <td style={{ color:'var(--muted)', fontSize:'.72rem' }}>{u.createdAt}</td>
-                          <td style={{ display:'flex', gap:'.4rem' }}>
-                            {u.approved
-                              ? <button className="btn btn-danger btn-sm" onClick={() => setConfirm({ type:'ban', userId:u.id, name:u.name })}>Ban</button>
-                              : <button className="btn btn-success btn-sm" onClick={() => setConfirm({ type:'approve', userId:u.id, name:u.name })}>Approve</button>
-                            }
+                          <td>
+                            <span
+                              className={`badge badge-${
+                                u.approved ? "success" : "warning"
+                              }`}
+                            >
+                              {u.approved ? "Active" : "Pending"}
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: ".72rem",
+                            }}
+                          >
+                            {u.createdAt}
+                          </td>
+                          <td style={{ display: "flex", gap: ".4rem" }}>
+                            {u.approved ? (
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() =>
+                                  setConfirm({
+                                    type: "ban",
+                                    userId: u.id,
+                                    name: u.name,
+                                  })
+                                }
+                              >
+                                Ban
+                              </button>
+                            ) : (
+                              <button
+                                className="btn btn-success btn-sm"
+                                onClick={() =>
+                                  setConfirm({
+                                    type: "approve",
+                                    userId: u.id,
+                                    name: u.name,
+                                  })
+                                }
+                              >
+                                Approve
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -537,43 +1010,134 @@ export default function AdminDashboard() {
             )}
 
             {/* ══ FARM ANALYTICS ══ */}
-            {activeTab === 'farms' && (
+            {activeTab === "farms" && (
               <>
-                <div style={{ marginBottom:'1.5rem' }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <div className="section-eyebrow">Analytics</div>
                   <div className="section-title">Farm-by-Farm Performance</div>
                 </div>
-                <div className="finance-grid" style={{ gridTemplateColumns:'repeat(4,1fr)' }}>
+                <div
+                  className="finance-grid"
+                  style={{ gridTemplateColumns: "repeat(4,1fr)" }}
+                >
                   {[
-                    { val: farmerUsers.filter(u=>u.approved).length, lbl:'Active Farms', color:'var(--gold)' },
-                    { val: FARM_PERFORMANCE.reduce((s,f)=>s+(f.birds||0),0).toLocaleString(), lbl:'Total Birds', color:'var(--success)' },
-                    { val: FARM_PERFORMANCE.reduce((s,f)=>s+(f.eggs||0),0), lbl:'Eggs Today', color:'var(--info)' },
-                    { val: fmt(FARM_PERFORMANCE.reduce((s,f)=>s+(f.revenue||0),0)), lbl:'Total Revenue', color:'var(--success)' },
-                  ].map(s => (
+                    {
+                      val: farmerUsers.filter((u) => u.approved).length,
+                      lbl: "Active Farms",
+                      color: "var(--gold)",
+                    },
+                    {
+                      val: FARM_PERFORMANCE.reduce(
+                        (s, f) => s + (f.birds || 0),
+                        0,
+                      ).toLocaleString(),
+                      lbl: "Total Birds",
+                      color: "var(--success)",
+                    },
+                    {
+                      val: FARM_PERFORMANCE.reduce(
+                        (s, f) => s + (f.eggs || 0),
+                        0,
+                      ),
+                      lbl: "Eggs Today",
+                      color: "var(--info)",
+                    },
+                    {
+                      val: fmt(
+                        FARM_PERFORMANCE.reduce(
+                          (s, f) => s + (f.revenue || 0),
+                          0,
+                        ),
+                      ),
+                      lbl: "Total Revenue",
+                      color: "var(--success)",
+                    },
+                  ].map((s) => (
                     <div className="finance-cell" key={s.lbl}>
-                      <div className="finance-val" style={{ color:s.color }}>{s.val}</div>
+                      <div className="finance-val" style={{ color: s.color }}>
+                        {s.val}
+                      </div>
                       <div className="finance-lbl">{s.lbl}</div>
                     </div>
                   ))}
                 </div>
                 <div className="card">
                   <table className="data-table">
-                    <thead><tr><th>Farm</th><th>Farmer</th><th>Birds</th><th>Eggs/Day</th><th>Revenue</th><th>Health</th><th>Sensor Uptime</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>Farm</th>
+                        <th>Farmer</th>
+                        <th>Birds</th>
+                        <th>Eggs/Day</th>
+                        <th>Revenue</th>
+                        <th>Health</th>
+                        <th>Sensor Uptime</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {FARM_PERFORMANCE.map(f => (
+                      {FARM_PERFORMANCE.map((f) => (
                         <tr key={f.farm}>
-                          <td style={{ fontWeight:500 }}>{f.farm}</td>
-                          <td style={{ color:'var(--muted)', fontSize:'.75rem' }}>{f.farmer}</td>
-                          <td>{f.birds?.toLocaleString() || '—'}</td>
-                          <td>{f.eggs || '—'}</td>
-                          <td style={{ fontFamily:'var(--font-d)', color:'var(--success)' }}>{fmt(f.revenue)}</td>
-                          <td><span className={`badge badge-${f.health==='good'?'success':f.health==='warning'?'warning':'muted'}`}>{f.health}</span></td>
+                          <td style={{ fontWeight: 500 }}>{f.farm}</td>
+                          <td
+                            style={{
+                              color: "var(--muted)",
+                              fontSize: ".75rem",
+                            }}
+                          >
+                            {f.farmer}
+                          </td>
+                          <td>{f.birds?.toLocaleString() || "—"}</td>
+                          <td>{f.eggs || "—"}</td>
+                          <td
+                            style={{
+                              fontFamily: "var(--font-d)",
+                              color: "var(--success)",
+                            }}
+                          >
+                            {fmt(f.revenue)}
+                          </td>
                           <td>
-                            <div style={{ display:'flex', alignItems:'center', gap:'.5rem' }}>
-                              <div className="bar-track" style={{ flex:1 }}>
-                                <div className="bar-fill" style={{ width: f.uptime!=='—'?f.uptime:'0%', background: parseFloat(f.uptime||0) > 98 ? 'var(--success)':'var(--warning)' }} />
+                            <span
+                              className={`badge badge-${
+                                f.health === "good"
+                                  ? "success"
+                                  : f.health === "warning"
+                                  ? "warning"
+                                  : "muted"
+                              }`}
+                            >
+                              {f.health}
+                            </span>
+                          </td>
+                          <td>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: ".5rem",
+                              }}
+                            >
+                              <div className="bar-track" style={{ flex: 1 }}>
+                                <div
+                                  className="bar-fill"
+                                  style={{
+                                    width: f.uptime !== "—" ? f.uptime : "0%",
+                                    background:
+                                      parseFloat(f.uptime || 0) > 98
+                                        ? "var(--success)"
+                                        : "var(--warning)",
+                                  }}
+                                />
                               </div>
-                              <span style={{ fontSize:'.72rem', color:'var(--muted)', width:'38px' }}>{f.uptime}</span>
+                              <span
+                                style={{
+                                  fontSize: ".72rem",
+                                  color: "var(--muted)",
+                                  width: "38px",
+                                }}
+                              >
+                                {f.uptime}
+                              </span>
                             </div>
                           </td>
                         </tr>
@@ -585,41 +1149,99 @@ export default function AdminDashboard() {
             )}
 
             {/* ══ SENSOR NETWORK ══ */}
-            {activeTab === 'sensors' && (
+            {activeTab === "sensors" && (
               <>
-                <div style={{ marginBottom:'1.5rem' }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <div className="section-eyebrow">IoT Network</div>
                   <div className="section-title">System-wide Sensor Status</div>
                 </div>
-                <div className="stats-grid" style={{ gridTemplateColumns:'repeat(4,1fr)', marginBottom:'2rem' }}>
+                <div
+                  className="stats-grid"
+                  style={{
+                    gridTemplateColumns: "repeat(4,1fr)",
+                    marginBottom: "2rem",
+                  }}
+                >
                   {[
-                    { val: SENSOR_OVERVIEW.reduce((s,f)=>s+f.online,0), lbl:'Sensors Online',  color:'var(--success)' },
-                    { val: SENSOR_OVERVIEW.reduce((s,f)=>s+f.offline,0),lbl:'Sensors Offline', color:'var(--danger)'  },
-                    { val: SENSOR_OVERVIEW.reduce((s,f)=>s+f.critical,0),lbl:'Critical',       color:'var(--danger)'  },
-                    { val: SENSOR_OVERVIEW.reduce((s,f)=>s+f.warning,0), lbl:'Warnings',       color:'var(--warning)' },
-                  ].map(s => (
+                    {
+                      val: SENSOR_OVERVIEW.reduce((s, f) => s + f.online, 0),
+                      lbl: "Sensors Online",
+                      color: "var(--success)",
+                    },
+                    {
+                      val: SENSOR_OVERVIEW.reduce((s, f) => s + f.offline, 0),
+                      lbl: "Sensors Offline",
+                      color: "var(--danger)",
+                    },
+                    {
+                      val: SENSOR_OVERVIEW.reduce((s, f) => s + f.critical, 0),
+                      lbl: "Critical",
+                      color: "var(--danger)",
+                    },
+                    {
+                      val: SENSOR_OVERVIEW.reduce((s, f) => s + f.warning, 0),
+                      lbl: "Warnings",
+                      color: "var(--warning)",
+                    },
+                  ].map((s) => (
                     <div className="stat-card" key={s.lbl}>
-                      <div className="stat-top-bar" style={{ background:s.color }} />
-                      <div className="stat-value" style={{ color:s.color }}>{s.val}</div>
+                      <div
+                        className="stat-top-bar"
+                        style={{ background: s.color }}
+                      />
+                      <div className="stat-value" style={{ color: s.color }}>
+                        {s.val}
+                      </div>
                       <div className="stat-label">{s.lbl}</div>
                     </div>
                   ))}
                 </div>
                 <div className="sensor-overview-grid">
-                  {SENSOR_OVERVIEW.map(f => (
+                  {SENSOR_OVERVIEW.map((f) => (
                     <div className="sensor-farm-card card" key={f.farm}>
-                      <div style={{ height:3, background:'var(--gold)', margin:'-1px -1px 0' }} />
-                      <div style={{ padding:'1rem' }}>
+                      <div
+                        style={{
+                          height: 3,
+                          background: "var(--gold)",
+                          margin: "-1px -1px 0",
+                        }}
+                      />
+                      <div style={{ padding: "1rem" }}>
                         <div className="sensor-farm-name">{f.farm}</div>
                         {[
-                          { label:'Online',   val:f.online,   color:'var(--success)' },
-                          { label:'Offline',  val:f.offline,  color:'var(--danger)'  },
-                          { label:'Critical', val:f.critical, color:'var(--danger)'  },
-                          { label:'Warnings', val:f.warning,  color:'var(--warning)' },
-                        ].map(row => (
+                          {
+                            label: "Online",
+                            val: f.online,
+                            color: "var(--success)",
+                          },
+                          {
+                            label: "Offline",
+                            val: f.offline,
+                            color: "var(--danger)",
+                          },
+                          {
+                            label: "Critical",
+                            val: f.critical,
+                            color: "var(--danger)",
+                          },
+                          {
+                            label: "Warnings",
+                            val: f.warning,
+                            color: "var(--warning)",
+                          },
+                        ].map((row) => (
                           <div className="sensor-status-row" key={row.label}>
-                            <span style={{ color:'var(--muted)' }}>{row.label}</span>
-                            <span style={{ color:row.val>0?row.color:'var(--muted)', fontWeight:500 }}>{row.val}</span>
+                            <span style={{ color: "var(--muted)" }}>
+                              {row.label}
+                            </span>
+                            <span
+                              style={{
+                                color: row.val > 0 ? row.color : "var(--muted)",
+                                fontWeight: 500,
+                              }}
+                            >
+                              {row.val}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -630,44 +1252,105 @@ export default function AdminDashboard() {
             )}
 
             {/* ══ FINANCIAL REPORTS ══ */}
-            {activeTab === 'finance' && (
+            {activeTab === "finance" && (
               <>
-                <div style={{ marginBottom:'1.5rem' }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <div className="section-eyebrow">Finance</div>
-                  <div className="section-title">Platform Financial Reports</div>
+                  <div className="section-title">
+                    Platform Financial Reports
+                  </div>
                 </div>
                 <div className="finance-grid">
                   {[
-                    { val:'KSh 100,000', lbl:'Total Platform Revenue (Mar)', color:'var(--success)' },
-                    { val:'KSh 21,350',  lbl:'Total Platform Expenses',      color:'var(--danger)'  },
-                    { val:'KSh 78,650',  lbl:'Net Platform Profit',          color:'var(--gold)'    },
-                  ].map(s => (
+                    {
+                      val: "KSh 100,000",
+                      lbl: "Total Platform Revenue (Mar)",
+                      color: "var(--success)",
+                    },
+                    {
+                      val: "KSh 21,350",
+                      lbl: "Total Platform Expenses",
+                      color: "var(--danger)",
+                    },
+                    {
+                      val: "KSh 78,650",
+                      lbl: "Net Platform Profit",
+                      color: "var(--gold)",
+                    },
+                  ].map((s) => (
                     <div className="finance-cell card" key={s.lbl}>
-                      <div className="finance-val" style={{ color:s.color }}>{s.val}</div>
+                      <div className="finance-val" style={{ color: s.color }}>
+                        {s.val}
+                      </div>
                       <div className="finance-lbl">{s.lbl}</div>
                     </div>
                   ))}
                 </div>
-                <div style={{ marginBottom:'1.2rem' }}>
+                <div style={{ marginBottom: "1.2rem" }}>
                   <div className="section-eyebrow">By Farm</div>
                   <div className="section-title">Revenue Breakdown</div>
                 </div>
                 <div className="card">
                   <table className="data-table">
-                    <thead><tr><th>Farm</th><th>Farmer</th><th>Revenue</th><th>Expenses</th><th>Net Profit</th><th>Margin</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>Farm</th>
+                        <th>Farmer</th>
+                        <th>Revenue</th>
+                        <th>Expenses</th>
+                        <th>Net Profit</th>
+                        <th>Margin</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {FARM_PERFORMANCE.filter(f=>f.revenue).map(f => {
+                      {FARM_PERFORMANCE.filter((f) => f.revenue).map((f) => {
                         const exp = Math.round(f.revenue * 0.35);
                         const net = f.revenue - exp;
-                        const margin = Math.round((net/f.revenue)*100);
+                        const margin = Math.round((net / f.revenue) * 100);
                         return (
                           <tr key={f.farm}>
-                            <td style={{ fontWeight:500 }}>{f.farm}</td>
-                            <td style={{ color:'var(--muted)', fontSize:'.75rem' }}>{f.farmer}</td>
-                            <td style={{ fontFamily:'var(--font-d)', color:'var(--success)' }}>{fmt(f.revenue)}</td>
-                            <td style={{ fontFamily:'var(--font-d)', color:'var(--danger)' }}>{fmt(exp)}</td>
-                            <td style={{ fontFamily:'var(--font-d)', color:'var(--gold)' }}>{fmt(net)}</td>
-                            <td><span className={`badge badge-${margin>50?'success':'warning'}`}>{margin}%</span></td>
+                            <td style={{ fontWeight: 500 }}>{f.farm}</td>
+                            <td
+                              style={{
+                                color: "var(--muted)",
+                                fontSize: ".75rem",
+                              }}
+                            >
+                              {f.farmer}
+                            </td>
+                            <td
+                              style={{
+                                fontFamily: "var(--font-d)",
+                                color: "var(--success)",
+                              }}
+                            >
+                              {fmt(f.revenue)}
+                            </td>
+                            <td
+                              style={{
+                                fontFamily: "var(--font-d)",
+                                color: "var(--danger)",
+                              }}
+                            >
+                              {fmt(exp)}
+                            </td>
+                            <td
+                              style={{
+                                fontFamily: "var(--font-d)",
+                                color: "var(--gold)",
+                              }}
+                            >
+                              {fmt(net)}
+                            </td>
+                            <td>
+                              <span
+                                className={`badge badge-${
+                                  margin > 50 ? "success" : "warning"
+                                }`}
+                              >
+                                {margin}%
+                              </span>
+                            </td>
                           </tr>
                         );
                       })}
@@ -678,69 +1361,127 @@ export default function AdminDashboard() {
             )}
 
             {/* ══ FARM ONBOARDING ══ */}
-            {activeTab === 'onboarding' && (
+            {activeTab === "onboarding" && (
               <>
-                <div style={{ marginBottom:'1.5rem' }}>
+                <div style={{ marginBottom: "1.5rem" }}>
                   <div className="section-eyebrow">Onboarding</div>
                   <div className="section-title">Register New Farm</div>
                 </div>
-                <div style={{ maxWidth:560 }}>
-                  <div style={{ background:'var(--navy-mid)', border:'1px solid rgba(201,168,76,.15)', padding:'2rem' }}>
+                <div style={{ maxWidth: 560 }}>
+                  <div
+                    style={{
+                      background: "var(--navy-mid)",
+                      border: "1px solid rgba(201,168,76,.15)",
+                      padding: "2rem",
+                    }}
+                  >
                     {[
-                      { label:'Farm Name',       placeholder:'e.g. Sunrise Poultry Farm' },
-                      { label:'Farmer Full Name', placeholder:'First and Last name' },
-                      { label:'Email Address',    placeholder:'farmer@email.com' },
-                      { label:'Phone Number',     placeholder:'+254 700 000 000' },
-                      { label:'Physical Location',placeholder:'County / Town' },
-                    ].map(f => (
+                      {
+                        label: "Farm Name",
+                        placeholder: "e.g. Sunrise Poultry Farm",
+                      },
+                      {
+                        label: "Farmer Full Name",
+                        placeholder: "First and Last name",
+                      },
+                      {
+                        label: "Email Address",
+                        placeholder: "farmer@email.com",
+                      },
+                      {
+                        label: "Phone Number",
+                        placeholder: "+254 700 000 000",
+                      },
+                      {
+                        label: "Physical Location",
+                        placeholder: "County / Town",
+                      },
+                    ].map((f) => (
                       <div className="form-field" key={f.label}>
                         <label className="form-label">{f.label}</label>
-                        <input className="form-input" placeholder={f.placeholder} />
+                        <input
+                          className="form-input"
+                          placeholder={f.placeholder}
+                        />
                       </div>
                     ))}
                     <div className="form-field">
                       <label className="form-label">Primary Flock Type</label>
                       <select className="form-select">
-                        <option>Broiler</option><option>Layer</option><option>Dual Purpose</option>
+                        <option>Broiler</option>
+                        <option>Layer</option>
+                        <option>Dual Purpose</option>
                       </select>
                     </div>
                     <div className="form-field">
-                      <label className="form-label">Initial Bird Count (approximate)</label>
-                      <input className="form-input" type="number" placeholder="e.g. 500" />
+                      <label className="form-label">
+                        Initial Bird Count (approximate)
+                      </label>
+                      <input
+                        className="form-input"
+                        type="number"
+                        placeholder="e.g. 500"
+                      />
                     </div>
-                    <div style={{ display:'flex', gap:'1rem', marginTop:'1.5rem' }}>
-                      <button className="btn btn-primary">Create Farm Account</button>
-                      <button className="btn btn-ghost">Send Invite Email</button>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "1rem",
+                        marginTop: "1.5rem",
+                      }}
+                    >
+                      <button className="btn btn-primary">
+                        Create Farm Account
+                      </button>
+                      <button className="btn btn-ghost">
+                        Send Invite Email
+                      </button>
                     </div>
                   </div>
                 </div>
               </>
             )}
-
-          </div>{/* /content */}
+          </div>
+          {/* /content */}
         </main>
       </div>
 
       {/* ── CONFIRM DIALOG ── */}
       {confirmAction && (
         <div className="confirm-overlay" onClick={() => setConfirm(null)}>
-          <div className="confirm-box" onClick={e => e.stopPropagation()}>
+          <div className="confirm-box" onClick={(e) => e.stopPropagation()}>
             <div className="confirm-title">
-              {confirmAction.type === 'approve' ? '✓ Approve Account' : '✕ Reject / Ban Account'}
+              {confirmAction.type === "approve"
+                ? "✓ Approve Account"
+                : "✕ Reject / Ban Account"}
             </div>
             <div className="confirm-body">
-              {confirmAction.type === 'approve'
+              {confirmAction.type === "approve"
                 ? `Grant full platform access to ${confirmAction.name}? They will be able to sign in immediately.`
-                : `Revoke access for ${confirmAction.name}? They will be unable to sign in until re-approved.`
-              }
+                : `Revoke access for ${confirmAction.name}? They will be unable to sign in until re-approved.`}
             </div>
             <div className="confirm-actions">
-              <button className="btn btn-ghost btn-sm" onClick={() => setConfirm(null)}>Cancel</button>
               <button
-                className={`btn btn-sm ${confirmAction.type==='approve'?'btn-success':'btn-danger'}`}
-                onClick={() => confirmAction.type==='approve' ? handleApprove(confirmAction.userId) : handleBan(confirmAction.userId)}
+                className="btn btn-ghost btn-sm"
+                onClick={() => setConfirm(null)}
               >
-                {confirmAction.type === 'approve' ? 'Yes, Approve' : 'Yes, Reject'}
+                Cancel
+              </button>
+              <button
+                className={`btn btn-sm ${
+                  confirmAction.type === "approve"
+                    ? "btn-success"
+                    : "btn-danger"
+                }`}
+                onClick={() =>
+                  confirmAction.type === "approve"
+                    ? handleApprove(confirmAction.userId)
+                    : handleBan(confirmAction.userId)
+                }
+              >
+                {confirmAction.type === "approve"
+                  ? "Yes, Approve"
+                  : "Yes, Reject"}
               </button>
             </div>
           </div>

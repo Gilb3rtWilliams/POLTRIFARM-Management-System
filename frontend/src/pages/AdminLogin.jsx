@@ -1,23 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { loginUser } from '../firebase';
-import '../css/Auth.css';
-import logo from '../assets/logos/app.png';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { loginUser } from "../firebase";
+import "../css/Auth.css";
 
 function Particles() {
   const items = Array.from({ length: 18 }, (_, i) => ({
-    id: i, left: `${Math.random() * 100}%`,
+    id: i,
+    left: `${Math.random() * 100}%`,
     size: `${Math.random() * 2 + 1}px`,
     duration: `${Math.random() * 14 + 8}s`,
     delay: `${Math.random() * 10}s`,
   }));
   return (
     <div className="auth-particles" aria-hidden="true">
-      {items.map(p => (
-        <div key={p.id} className="auth-particle" style={{
-          left: p.left, width: p.size, height: p.size,
-          animationDuration: p.duration, animationDelay: p.delay,
-        }} />
+      {items.map((p) => (
+        <div
+          key={p.id}
+          className="auth-particle"
+          style={{
+            left: p.left,
+            width: p.size,
+            height: p.size,
+            animationDuration: p.duration,
+            animationDelay: p.delay,
+          }}
+        />
       ))}
     </div>
   );
@@ -25,97 +32,132 @@ function Particles() {
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const dotRef  = useRef(null);
+  const dotRef = useRef(null);
   const ringRef = useRef(null);
-  const mouse   = useRef({ x: -200, y: -200 });
-  const pos     = useRef({ x: -200, y: -200 });
+  const mouse = useRef({ x: -200, y: -200 });
+  const pos = useRef({ x: -200, y: -200 });
 
   useEffect(() => {
-    const move = e => { mouse.current.x = e.clientX; mouse.current.y = e.clientY; };
-    window.addEventListener('mousemove', move);
+    const move = (e) => {
+      mouse.current.x = e.clientX;
+      mouse.current.y = e.clientY;
+    };
+    window.addEventListener("mousemove", move);
     let raf;
     const loop = () => {
       pos.current.x += (mouse.current.x - pos.current.x) * 0.11;
       pos.current.y += (mouse.current.y - pos.current.y) * 0.11;
       if (dotRef.current)
-        dotRef.current.style.transform = `translate(${mouse.current.x - 5}px,${mouse.current.y - 5}px)`;
+        dotRef.current.style.transform = `translate(${mouse.current.x - 5}px,${
+          mouse.current.y - 5
+        }px)`;
       if (ringRef.current)
-        ringRef.current.style.transform = `translate(${pos.current.x - 18}px,${pos.current.y - 18}px)`;
+        ringRef.current.style.transform = `translate(${pos.current.x - 18}px,${
+          pos.current.y - 18
+        }px)`;
       raf = requestAnimationFrame(loop);
     };
     loop();
-    return () => { window.removeEventListener('mousemove', move); cancelAnimationFrame(raf); };
+    return () => {
+      window.removeEventListener("mousemove", move);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
-  const [form, setForm]       = useState({ adminId: '', email: '', password: '' });
-  const [errors, setErrors]   = useState({});
-  const [showPw, setShowPw]   = useState(false);
+  const [form, setForm] = useState({ adminId: "", email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [banner, setBanner]   = useState(null);
+  const [banner, setBanner] = useState(null);
   const [attempts, setAttempts] = useState(0);
 
   const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }));
-    if (errors[k]) setErrors(e => ({ ...e, [k]: null }));
+    setForm((f) => ({ ...f, [k]: v }));
+    if (errors[k]) setErrors((e) => ({ ...e, [k]: null }));
   };
 
   const validate = () => {
     const e = {};
-    if (!form.adminId.trim()) e.adminId  = 'Admin ID is required.';
-    if (!form.email)          e.email    = 'Email is required.';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email.';
-    if (!form.password)       e.password = 'Password is required.';
+    if (!form.adminId.trim()) e.adminId = "Admin ID is required.";
+    if (!form.email) e.email = "Email is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      e.email = "Enter a valid email.";
+    if (!form.password) e.password = "Password is required.";
     return e;
   };
 
   const handleSubmit = async (ev) => {
     ev.preventDefault();
     if (attempts >= 5) {
-      setBanner({ type: 'error', msg: 'Too many attempts. Please contact system support.' });
+      setBanner({
+        type: "error",
+        msg: "Too many attempts. Please contact system support.",
+      });
       return;
     }
     const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
+    if (Object.keys(e).length) {
+      setErrors(e);
+      return;
+    }
     setLoading(true);
     setBanner(null);
     try {
       const { role, userData } = await loginUser(form.email, form.password);
       // Block non-admins from using this portal
-      if (role !== 'admin') {
-        setBanner({ type: 'error', msg: 'This portal is for administrators only. Use the Farmer login instead.' });
+      if (role !== "admin") {
+        setBanner({
+          type: "error",
+          msg: "This portal is for administrators only. Use the Farmer login instead.",
+        });
         setLoading(false);
         return;
       }
       // Verify admin ID matches stored record (optional extra check)
-      if (userData.adminId && form.adminId && userData.adminId !== form.adminId) {
-        setBanner({ type: 'error', msg: 'Admin ID does not match our records.' });
-        setAttempts(a => a + 1);
+      if (
+        userData.adminId &&
+        form.adminId &&
+        userData.adminId !== form.adminId
+      ) {
+        setBanner({
+          type: "error",
+          msg: "Admin ID does not match our records.",
+        });
+        setAttempts((a) => a + 1);
         setLoading(false);
         return;
       }
-      setBanner({ type: 'success', msg: 'Admin authenticated. Redirecting to control panel…' });
-      setTimeout(() => navigate('/admin/dashboard'), 1200);
+      setBanner({
+        type: "success",
+        msg: "Admin authenticated. Redirecting to control panel…",
+      });
+      setTimeout(() => navigate("/admin/dashboard"), 1200);
     } catch (err) {
-      setAttempts(a => a + 1);
+      setAttempts((a) => a + 1);
       const msg =
-        err.code === 'auth/invalid-credential' ? 'Incorrect email or password.' :
-        err.code === 'auth/user-not-found'     ? 'No admin account found with this email.' :
-        err.code === 'auth/wrong-password'     ? 'Incorrect password.' :
-        err.code === 'auth/too-many-requests'  ? 'Too many failed attempts. Account temporarily locked.' :
-        err.code === 'auth/user-disabled'      ? 'This account has been disabled.' :
-        err.message || 'Login failed. Please try again.';
-      setBanner({ type: 'error', msg });
+        err.code === "auth/invalid-credential"
+          ? "Incorrect email or password."
+          : err.code === "auth/user-not-found"
+          ? "No admin account found with this email."
+          : err.code === "auth/wrong-password"
+          ? "Incorrect password."
+          : err.code === "auth/too-many-requests"
+          ? "Too many failed attempts. Account temporarily locked."
+          : err.code === "auth/user-disabled"
+          ? "This account has been disabled."
+          : err.message || "Login failed. Please try again.";
+      setBanner({ type: "error", msg });
     } finally {
       setLoading(false);
     }
   };
 
-  const expand = () => ringRef.current?.classList.add('expanded');
-  const shrink = () => ringRef.current?.classList.remove('expanded');
+  const expand = () => ringRef.current?.classList.add("expanded");
+  const shrink = () => ringRef.current?.classList.remove("expanded");
 
   return (
     <div className="auth-page">
-      <div className="cursor-dot"  ref={dotRef}  aria-hidden="true" />
+      <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
       <div className="cursor-ring" ref={ringRef} aria-hidden="true" />
 
       {/* LEFT — distinct admin color treatment */}
@@ -126,28 +168,31 @@ export default function AdminLogin() {
         <div className="auth-geo auth-geo-circle-inner" />
         <Particles />
 
-        <Link to="/" className="auth-brand" onMouseEnter={expand} onMouseLeave={shrink}>
-          <img src={logo} alt="Poltrifarm" className="auth-brand-logo" />
-          <div className="auth-brand-name">POLTRI<span>FARM</span></div>
-        </Link>
-
         <div className="auth-left-body">
           <div className="auth-left-eyebrow">Administrator Portal</div>
           <h2 className="auth-left-heading">
-            System<br /><em>Control</em><br /><strong>Centre.</strong>
+            System
+            <br />
+            <em>Control</em>
+            <br />
+            <strong>Centre.</strong>
           </h2>
           <p className="auth-left-desc">
-            Restricted access for authorized administrators only.
-            This portal provides full system oversight, user management,
-            and platform configuration.
+            Restricted access for authorized administrators only. This portal
+            provides full system oversight, user management, and platform
+            configuration.
           </p>
           <div className="auth-left-features">
             {[
-              'Full user account management',
-              'System-wide analytics & reporting',
-              'Farm onboarding & configuration',
-              'Security audit & access control',
-            ].map(f => <div className="auth-feature-pill" key={f}>{f}</div>)}
+              "Full user account management",
+              "System-wide analytics & reporting",
+              "Farm onboarding & configuration",
+              "Security audit & access control",
+            ].map((f) => (
+              <div className="auth-feature-pill" key={f}>
+                {f}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -163,34 +208,49 @@ export default function AdminLogin() {
 
           <div className="auth-form-header">
             <div className="auth-form-eyebrow">Admin Portal</div>
-            <h1 className="auth-form-title">Admin <em>Sign In</em></h1>
+            <h1 className="auth-form-title">
+              Admin <em>Sign In</em>
+            </h1>
             <p className="auth-form-subtitle">
-              Authorized personnel only. All access attempts are logged and monitored.
+              Authorized personnel only. All access attempts are logged and
+              monitored.
             </p>
           </div>
 
           {/* Role switch */}
-          <div className="auth-role-toggle" role="tablist" aria-label="Account type">
+          <div
+            className="auth-role-toggle"
+            role="tablist"
+            aria-label="Account type"
+          >
             <button
-              role="tab" aria-selected="false"
+              role="tab"
+              aria-selected="false"
               className="role-tab"
-              onClick={() => navigate('/login')}
-              onMouseEnter={expand} onMouseLeave={shrink}
+              onClick={() => navigate("/login")}
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
             >
               🌾 &nbsp;Farmer
             </button>
             <button
-              role="tab" aria-selected="true"
+              role="tab"
+              aria-selected="true"
               className="role-tab active"
-              onMouseEnter={expand} onMouseLeave={shrink}
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
             >
               ◆ &nbsp;Admin
             </button>
           </div>
 
           {banner && (
-            <div className={banner.type === 'success' ? 'auth-success' : 'auth-error-banner'}>
-              {banner.type === 'success' ? '✓' : '✕'} &nbsp;{banner.msg}
+            <div
+              className={
+                banner.type === "success" ? "auth-success" : "auth-error-banner"
+              }
+            >
+              {banner.type === "success" ? "✓" : "✕"} &nbsp;{banner.msg}
             </div>
           )}
 
@@ -199,66 +259,109 @@ export default function AdminLogin() {
               <label>Admin ID</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">◆</span>
-                <input className={`auth-input ${errors.adminId ? 'error' : ''}`}
-                  type="text" placeholder="Your administrator ID"
-                  value={form.adminId} onChange={e => set('adminId', e.target.value)}
-                  onMouseEnter={expand} onMouseLeave={shrink} autoComplete="username" />
+                <input
+                  className={`auth-input ${errors.adminId ? "error" : ""}`}
+                  type="text"
+                  placeholder="Your administrator ID"
+                  value={form.adminId}
+                  onChange={(e) => set("adminId", e.target.value)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
+                  autoComplete="username"
+                />
               </div>
-              {errors.adminId && <span className="auth-field-error">{errors.adminId}</span>}
+              {errors.adminId && (
+                <span className="auth-field-error">{errors.adminId}</span>
+              )}
             </div>
 
             <div className="auth-field">
               <label>Email Address</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">✉</span>
-                <input className={`auth-input ${errors.email ? 'error' : ''}`}
-                  type="email" placeholder="admin@poltrifarm.com"
-                  value={form.email} onChange={e => set('email', e.target.value)}
-                  onMouseEnter={expand} onMouseLeave={shrink} autoComplete="email" />
+                <input
+                  className={`auth-input ${errors.email ? "error" : ""}`}
+                  type="email"
+                  placeholder="admin@poltrifarm.com"
+                  value={form.email}
+                  onChange={(e) => set("email", e.target.value)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
+                  autoComplete="email"
+                />
               </div>
-              {errors.email && <span className="auth-field-error">{errors.email}</span>}
+              {errors.email && (
+                <span className="auth-field-error">{errors.email}</span>
+              )}
             </div>
 
             <div className="auth-field">
               <label>Password</label>
               <div className="auth-input-wrap">
                 <span className="auth-input-icon">🔒</span>
-                <input className={`auth-input ${errors.password ? 'error' : ''}`}
-                  type={showPw ? 'text' : 'password'} placeholder="Admin password"
-                  value={form.password} onChange={e => set('password', e.target.value)}
-                  onMouseEnter={expand} onMouseLeave={shrink} autoComplete="current-password" />
-                <button type="button" className="auth-pw-toggle"
-                  onClick={() => setShowPw(v => !v)}
-                  onMouseEnter={expand} onMouseLeave={shrink}>
-                  {showPw ? 'Hide' : 'Show'}
+                <input
+                  className={`auth-input ${errors.password ? "error" : ""}`}
+                  type={showPw ? "text" : "password"}
+                  placeholder="Admin password"
+                  value={form.password}
+                  onChange={(e) => set("password", e.target.value)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="auth-pw-toggle"
+                  onClick={() => setShowPw((v) => !v)}
+                  onMouseEnter={expand}
+                  onMouseLeave={shrink}
+                >
+                  {showPw ? "Hide" : "Show"}
                 </button>
               </div>
-              {errors.password && <span className="auth-field-error">{errors.password}</span>}
+              {errors.password && (
+                <span className="auth-field-error">{errors.password}</span>
+              )}
             </div>
 
             {attempts > 0 && attempts < 5 && (
-              <div className="auth-error-banner" style={{ fontSize: '0.75rem' }}>
-                ⚠ &nbsp;{5 - attempts} attempt{5 - attempts !== 1 ? 's' : ''} remaining before lockout.
+              <div
+                className="auth-error-banner"
+                style={{ fontSize: "0.75rem" }}
+              >
+                ⚠ &nbsp;{5 - attempts} attempt{5 - attempts !== 1 ? "s" : ""}{" "}
+                remaining before lockout.
               </div>
             )}
 
-            <button type="submit" className="auth-submit" disabled={loading || attempts >= 5}
-              onMouseEnter={expand} onMouseLeave={shrink}>
+            <button
+              type="submit"
+              className="auth-submit"
+              disabled={loading || attempts >= 5}
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
+            >
               <span className="auth-submit-inner">
                 {loading && <span className="auth-spinner" />}
-                {loading ? 'Verifying…' : 'Access Control Panel'}
+                {loading ? "Verifying…" : "Access Control Panel"}
               </span>
             </button>
           </form>
 
           <div className="auth-footer-link">
             Need an admin account?&nbsp;
-            <Link to="/admin/register" onMouseEnter={expand} onMouseLeave={shrink}>
+            <Link
+              to="/admin/register"
+              onMouseEnter={expand}
+              onMouseLeave={shrink}
+            >
               Request access here
             </Link>
           </div>
-          <div className="auth-footer-link" style={{ marginTop: '0.6rem' }}>
-            <Link to="/" onMouseEnter={expand} onMouseLeave={shrink}>← Back to homepage</Link>
+          <div className="auth-footer-link" style={{ marginTop: "0.6rem" }}>
+            <Link to="/" onMouseEnter={expand} onMouseLeave={shrink}>
+              ← Back to homepage
+            </Link>
           </div>
         </div>
       </div>

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../firebase";
 import "../css/Auth.css";
-import logo from "../assets/logos/app.png";
 
 function Particles() {
   const items = Array.from({ length: 18 }, (_, i) => ({
@@ -169,18 +168,6 @@ export default function AdminRegister() {
         <div className="auth-geo auth-geo-circle" />
         <div className="auth-geo auth-geo-circle-inner" />
         <Particles />
-
-        <Link
-          to="/"
-          className="auth-brand"
-          onMouseEnter={expand}
-          onMouseLeave={shrink}
-        >
-          <img src={logo} alt="Poltrifarm" className="auth-brand-logo" />
-          <div className="auth-brand-name">
-            POLTRI<span>FARM</span>
-          </div>
-        </Link>
 
         <div className="auth-left-body">
           <div className="auth-left-eyebrow">Administrator Portal</div>
