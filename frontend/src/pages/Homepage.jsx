@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Slideshow from "../components/Slideshow";
 import NavBar from "../components/NavBar";
 import "../css/Homepage.css";
+import flock from "../assets/images/flock-management.png";
+import analytics from "../assets/images/production-analytics.png";
+import health from "../assets/images/health-and-biosecurity.png";
+import inventory from "../assets/images/feed-inventory.png";
+import finance from "../assets/images/financial-report.png";
+import multifarm from "../assets/images/multi-farm.png";
 
 /* ── Small reusable reveal hook ── */
 function useReveal() {
@@ -112,6 +119,9 @@ function Homepage() {
     e.target.reset();
   };
 
+  const [activeService, setActiveService] = useState(null);
+  const navigate = useNavigate();
+
   /* -- reveal refs -- */
   const [servicesRef, servicesVis] = useReveal();
   const [whyRef, whyVis] = useReveal();
@@ -215,7 +225,6 @@ function Homepage() {
               <em>Poultry Operation</em>
             </h2>
           </div>
-
           <div className="services-grid">
             {[
               {
@@ -223,56 +232,84 @@ function Homepage() {
                 icon: "🐔",
                 name: "Flock Management",
                 desc: "Track every batch from day-old chick to market-weight bird. Monitor health indicators, vaccination schedules, and daily weight gain with precision.",
-                link: "/pages/flock-management",
+                image: flock,
+                link: "/flock-management",
               },
               {
                 num: "02",
                 icon: "📊",
                 name: "Production Analytics",
                 desc: "Real-time dashboards powered by your farm data. Feed conversion ratios, mortality trends, egg production rates — all in one elegant interface.",
-                link: "/pages/production-analytics",
+                image: analytics,
+                link: "/production-analytics",
               },
               {
                 num: "03",
                 icon: "💊",
                 name: "Health & Biosecurity",
                 desc: "Integrated disease surveillance, medication tracking, and biosecurity audit tools to keep your flock healthy and your farm compliant.",
-                link: "/pages/health-biosecurity",
+                image: health,
+                link: "/health-biosecurity",
               },
               {
                 num: "04",
                 icon: "🏭",
                 name: "Feed & Inventory",
                 desc: "Automated feed consumption forecasting, supplier management, and stock alerts ensure you never run short — or overspend.",
-                link: "/pages/feed-inventory",
+                image: inventory,
+                link: "/feed-inventory",
               },
               {
                 num: "05",
                 icon: "💰",
                 name: "Financial Reporting",
                 desc: "Profit-and-loss per batch, cost-per-bird breakdowns, and ROI projections. Make smarter decisions backed by actual farm economics.",
-                link: "/pages/financial-reporting",
+                image: finance,
+                link: "/financial-reporting",
               },
               {
                 num: "06",
                 icon: "🌐",
                 name: "Multi-Farm Control",
                 desc: "Manage multiple farms from a single command center. Benchmark performance across sites and deploy best practices at scale.",
-                link: "/pages/multi-farm-control",
+                image: multifarm,
+                link: "/multi-farm-control",
               },
             ].map((s, i) => (
               <div
-                className={`service-card reveal ${
+                key={s.num}
+                className={`service-card-wrapper reveal ${
                   servicesVis ? "visible" : ""
                 }`}
                 style={{ transitionDelay: `${i * 80}ms` }}
-                key={s.num}
+                onMouseEnter={() => setActiveService(s.num)}
+                onMouseLeave={() => setActiveService(null)}
+                onClick={() => navigate(s.link)}
               >
-                <span className="service-bg-num">{s.num}</span>
-                <span className="service-icon">{s.icon}</span>
-                <h3 className="service-name">{s.name}</h3>
-                <p className="service-desc">{s.desc}</p>
-                <span className="service-link">Learn more →</span>
+                <div
+                  className={`service-card-inner ${
+                    activeService === s.num ? "flipped" : ""
+                  }`}
+                >
+                  {/* FRONT */}
+                  <div className="service-card-front">
+                    <div
+                      className="service-bg"
+                      style={{ backgroundImage: `url(${s.image})` }}
+                    />
+                    <div className="service-overlay" />
+
+                    <span className="service-bg-num">{s.num}</span>
+                    <span className="service-icon">{s.icon}</span>
+                    <h3 className="service-name">{s.name}</h3>
+                  </div>
+
+                  {/* BACK */}
+                  <div className="service-card-back">
+                    <p className="service-desc">{s.desc}</p>
+                    <span className="service-link">Learn more →</span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>

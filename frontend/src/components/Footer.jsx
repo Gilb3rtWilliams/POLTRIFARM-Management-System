@@ -5,11 +5,11 @@ import logo from "../assets/logos/app.png";
 
 const FOOTER_LINKS = {
   Platform: [
-    { label: "Flock Management", path: "/dashboard" },
-    { label: "Production Analytics", path: "/reports" },
-    { label: "Health & Biosecurity", path: "/dashboard" },
-    { label: "Feed & Inventory", path: "/inventory" },
-    { label: "Financial Reports", path: "/reports" },
+    { label: "Flock Management", path: "/flock-management" },
+    { label: "Production Analytics", path: "/production-analytics" },
+    { label: "Health & Biosecurity", path: "/health-biosecurity" },
+    { label: "Feed & Inventory", path: "/feed-inventory" },
+    { label: "Financial Reports", path: "/financial-reporting" },
   ],
   Company: [
     { label: "About Us", path: "/about" },
